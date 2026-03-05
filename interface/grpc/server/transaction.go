@@ -7,6 +7,7 @@ import (
 
 	"refina-transaction/config/log"
 	"refina-transaction/interface/grpc/interceptor"
+	"refina-transaction/internal/repository"
 	"refina-transaction/internal/service"
 	"refina-transaction/internal/types/dto"
 	"refina-transaction/internal/utils/data"
@@ -63,12 +64,29 @@ func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.Ge
 		"service":    data.GRPCServerService,
 		"user_id":    userID,
 		"wallet_ids": req.GetWalletIds(),
-		"page":       req.GetPage(),
 		"page_size":  req.GetPageSize(),
+		"cursor":     req.GetCursor(),
 	})
 
-	// Fetch all transactions for the given wallet IDs via service layer
-	allTransactions, err := s.transactionService.GetTransactionsByWalletIDs(ctx, req.GetWalletIds())
+	pageSize := req.GetPageSize()
+
+	q := repository.CursorQuery{
+		WalletIDs:    req.GetWalletIds(),
+		WalletID:     req.GetWalletId(),
+		CategoryID:   req.GetCategoryId(),
+		CategoryType: req.GetCategoryType(),
+		DateFrom:     req.GetDateFrom(),
+		DateTo:       req.GetDateTo(),
+		Search:       req.GetSearch(),
+		SortBy:       req.GetSortBy(),
+		SortOrder:    req.GetSortOrder(),
+		PageSize:     int(pageSize),
+		Cursor:       req.GetCursor(),
+		CursorAmount: req.GetCursorAmount(),
+		CursorDate:   req.GetCursorDate(),
+	}
+
+	results, total, err := s.transactionService.GetTransactionsByCursor(ctx, q)
 	if err != nil {
 		log.Error(data.LogGetUserTransactionsFailed, map[string]any{
 			"service": data.GRPCServerService,
@@ -78,56 +96,43 @@ func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.Ge
 		return nil, fmt.Errorf("get user transactions: %w", err)
 	}
 
-	// ── Apply filters ──
-	filtered := applyFilters(allTransactions, req)
-
-	// ── Apply sorting ──
-	applySorting(filtered, req.GetSortBy(), req.GetSortOrder())
-
-	// ── Pagination ──
-	total := int32(len(filtered))
-	page := req.GetPage()
-	pageSize := req.GetPageSize()
-	if page <= 0 {
-		page = 1
+	// Determine has_next by checking if we got more than pageSize
+	hasNext := false
+	if pageSize > 0 && int32(len(results)) > pageSize {
+		hasNext = true
+		results = results[:pageSize] // trim extra item
 	}
-	if pageSize < 0 {
-		pageSize = 9999
-	}
-	totalPages := (total + pageSize - 1) / pageSize
 
-	start := (page - 1) * pageSize
-	end := start + pageSize
-	if start > total {
-		start = total
-	}
-	if end > total {
-		end = total
-	}
-	pageItems := filtered[start:end]
-
-	// ── Build response ──
-	protoTxns := make([]*tpb.TransactionDetail, 0, len(pageItems))
-	for _, txn := range pageItems {
+	// Build response
+	protoTxns := make([]*tpb.TransactionDetail, 0, len(results))
+	for _, txn := range results {
 		protoTxns = append(protoTxns, toProtoTransactionDetail(txn))
 	}
 
+	resp := &tpb.GetUserTransactionsResponse{
+		Transactions: protoTxns,
+		Total:        int32(total),
+		PageSize:     pageSize,
+		HasNext:      hasNext,
+	}
+
+	// Set next cursor from last item
+	if len(results) > 0 {
+		last := results[len(results)-1]
+		resp.NextCursor = last.ID
+		resp.NextCursorAmount = last.Amount
+		resp.NextCursorDate = last.TransactionDate.Format(time.RFC3339)
+	}
+
 	log.Info(data.LogGetUserTransactionsSuccess, map[string]any{
-		"service":     data.GRPCServerService,
-		"user_id":     userID,
-		"total":       total,
-		"page":        page,
-		"page_size":   pageSize,
-		"total_pages": totalPages,
+		"service":   data.GRPCServerService,
+		"user_id":   userID,
+		"total":     total,
+		"page_size": pageSize,
+		"has_next":  hasNext,
 	})
 
-	return &tpb.GetUserTransactionsResponse{
-		Transactions: protoTxns,
-		Total:        total,
-		Page:         page,
-		PageSize:     pageSize,
-		TotalPages:   totalPages,
-	}, nil
+	return resp, nil
 }
 
 func (s *transactionServer) GetTransactionByID(ctx context.Context, req *tpb.TransactionID) (*tpb.TransactionDetail, error) {
@@ -522,129 +527,4 @@ func toProtoAttachment(a dto.AttachmentsResponse) *tpb.Attachment {
 		Size:          a.Size,
 		CreatedAt:     a.CreatedAt,
 	}
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Filtering & Sorting helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-func applyFilters(transactions []dto.TransactionsResponse, req *tpb.GetUserTransactionsRequest) []dto.TransactionsResponse {
-	filtered := make([]dto.TransactionsResponse, 0, len(transactions))
-
-	for _, txn := range transactions {
-		// Wallet ID filter
-		if req.GetWalletId() != "" && txn.WalletID != req.GetWalletId() {
-			continue
-		}
-
-		// Category ID filter
-		if req.GetCategoryId() != "" && txn.CategoryID != req.GetCategoryId() {
-			continue
-		}
-
-		// Category type filter
-		if req.GetCategoryType() != "" && txn.CategoryType != req.GetCategoryType() {
-			continue
-		}
-
-		// Date range filter
-		if req.GetDateFrom() != "" {
-			dateFrom, err := time.Parse(time.RFC3339, req.GetDateFrom())
-			if err == nil && txn.TransactionDate.Before(dateFrom) {
-				continue
-			}
-		}
-		if req.GetDateTo() != "" {
-			dateTo, err := time.Parse(time.RFC3339, req.GetDateTo())
-			if err == nil && txn.TransactionDate.After(dateTo) {
-				continue
-			}
-		}
-
-		// Search filter (description)
-		if req.GetSearch() != "" {
-			search := req.GetSearch()
-			if !containsIgnoreCase(txn.Description, search) && !containsIgnoreCase(txn.CategoryName, search) {
-				continue
-			}
-		}
-
-		filtered = append(filtered, txn)
-	}
-
-	return filtered
-}
-
-func applySorting(transactions []dto.TransactionsResponse, sortBy, sortOrder string) {
-	if sortBy == "" {
-		sortBy = "transaction_date"
-	}
-	if sortOrder == "" {
-		sortOrder = "desc"
-	}
-
-	isDesc := sortOrder == "desc"
-
-	// Simple sort using slices
-	n := len(transactions)
-	for i := 0; i < n-1; i++ {
-		for j := 0; j < n-i-1; j++ {
-			shouldSwap := false
-			switch sortBy {
-			case "amount":
-				if isDesc {
-					shouldSwap = transactions[j].Amount < transactions[j+1].Amount
-				} else {
-					shouldSwap = transactions[j].Amount > transactions[j+1].Amount
-				}
-			case "transaction_date":
-				if isDesc {
-					shouldSwap = transactions[j].TransactionDate.Before(transactions[j+1].TransactionDate)
-				} else {
-					shouldSwap = transactions[j].TransactionDate.After(transactions[j+1].TransactionDate)
-				}
-			default:
-				// Default: sort by date desc
-				if isDesc {
-					shouldSwap = transactions[j].TransactionDate.Before(transactions[j+1].TransactionDate)
-				} else {
-					shouldSwap = transactions[j].TransactionDate.After(transactions[j+1].TransactionDate)
-				}
-			}
-			if shouldSwap {
-				transactions[j], transactions[j+1] = transactions[j+1], transactions[j]
-			}
-		}
-	}
-}
-
-func containsIgnoreCase(s, substr string) bool {
-	if len(substr) == 0 {
-		return true
-	}
-	// Simple case-insensitive contains
-	ls := toLower(s)
-	lsub := toLower(substr)
-	return len(ls) >= len(lsub) && contains(ls, lsub)
-}
-
-func toLower(s string) string {
-	b := make([]byte, len(s))
-	for i := range s {
-		c := s[i]
-		if c >= 'A' && c <= 'Z' {
-			c += 'a' - 'A'
-		}
-		b[i] = c
-	}
-	return string(b)
-}
-
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

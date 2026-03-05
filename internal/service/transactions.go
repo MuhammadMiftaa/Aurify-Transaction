@@ -20,6 +20,7 @@ type TransactionsService interface {
 	GetAllTransactions(ctx context.Context) ([]dto.TransactionsResponse, error)
 	GetTransactionByID(ctx context.Context, id string) (dto.TransactionsResponse, error)
 	GetTransactionsByWalletIDs(ctx context.Context, ids []string) ([]dto.TransactionsResponse, error)
+	GetTransactionsByCursor(ctx context.Context, q repository.CursorQuery) ([]dto.TransactionsResponse, int64, error)
 	CreateTransaction(ctx context.Context, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error)
 	FundTransfer(ctx context.Context, transaction dto.FundTransferRequest) (dto.FundTransferResponse, error)
 	UploadAttachment(ctx context.Context, transactionID string, files []string) ([]dto.AttachmentsResponse, error)
@@ -110,6 +111,21 @@ func (transaction_serv *transactionsService) GetTransactionsByWalletIDs(ctx cont
 	}
 
 	return transactionResponses, nil
+}
+
+func (transaction_serv *transactionsService) GetTransactionsByCursor(ctx context.Context, q repository.CursorQuery) ([]dto.TransactionsResponse, int64, error) {
+	transactions, total, err := transaction_serv.transactionRepo.GetTransactionsByCursor(ctx, nil, q)
+	if err != nil {
+		return nil, 0, fmt.Errorf("get transactions by cursor: %w", err)
+	}
+
+	transactionResponses := make([]dto.TransactionsResponse, 0, len(transactions))
+	for _, transaction := range transactions {
+		transactionResponse := helper.ConvertToResponseType(transaction).(dto.TransactionsResponse)
+		transactionResponses = append(transactionResponses, transactionResponse)
+	}
+
+	return transactionResponses, total, nil
 }
 
 func (transaction_serv *transactionsService) CreateTransaction(ctx context.Context, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error) {
