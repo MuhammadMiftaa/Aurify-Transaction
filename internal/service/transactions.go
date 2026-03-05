@@ -136,30 +136,9 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 
 	defer tx.Rollback()
 
-	// Check if wallet and category exist
-	wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.WalletID)
-	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transaction.WalletID, err)
-	}
-
 	category, err := transaction_serv.categoryRepo.GetCategoryByID(ctx, tx, transaction.CategoryID)
 	if err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("category not found [id=%s]: %w", transaction.CategoryID, err)
-	}
-
-	// Check if wallet has sufficient balance
-	if wallet.GetBalance() < transaction.Amount {
-		return dto.TransactionsResponse{}, fmt.Errorf("insufficient wallet balance [wallet_id=%s]", transaction.WalletID)
-	}
-
-	// Check if transaction type is valid and update wallet balance
-	switch category.Type {
-	case "expense":
-		wallet.Balance -= transaction.Amount
-	case "income":
-		wallet.Balance += transaction.Amount
-	default:
-		return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", category.Type)
 	}
 
 	// Parse ID from JSON to valid UUID
@@ -173,10 +152,33 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 		return dto.TransactionsResponse{}, fmt.Errorf("invalid wallet id [id=%s]: %w", transaction.WalletID, err)
 	}
 
-	// Update wallet balance
-	_, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet)
-	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("update wallet balance [wallet_id=%s]: %w", transaction.WalletID, err)
+	// Check if wallet and category exist
+	if !transaction.IsWalletNotCreated {
+		wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.WalletID)
+		if err != nil {
+			return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transaction.WalletID, err)
+		}
+
+		// Check if transaction type is valid and update wallet balance
+		switch category.Type {
+		case "expense":
+			// Check if wallet has sufficient balance
+			if wallet.GetBalance() < transaction.Amount {
+				return dto.TransactionsResponse{}, fmt.Errorf("insufficient wallet balance [wallet_id=%s]", transaction.WalletID)
+			}
+
+			wallet.Balance -= transaction.Amount
+		case "income":
+			wallet.Balance += transaction.Amount
+		default:
+			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", category.Type)
+		}
+
+		// Update wallet balance
+		_, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet)
+		if err != nil {
+			return dto.TransactionsResponse{}, fmt.Errorf("update wallet balance [wallet_id=%s]: %w", transaction.WalletID, err)
+		}
 	}
 
 	// Create transaction
@@ -197,7 +199,7 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 		for _, attachment := range transaction.Attachments {
 			// * Create new attachment
 			if len(attachment.Files) == 0 {
-				return dto.TransactionsResponse{}, fmt.Errorf("no files to upload")
+				break
 			}
 
 			if _, err := transaction_serv.UploadAttachment(ctx, transactionNew.ID.String(), attachment.Files); err != nil {

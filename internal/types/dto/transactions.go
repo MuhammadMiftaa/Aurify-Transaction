@@ -29,6 +29,9 @@ type TransactionsRequest struct {
 	Date        time.Time                  `json:"date"`
 	Description string                     `json:"description"`
 	Attachments []UpdateAttachmentsRequest `json:"attachments"`
+
+	// Indicates if the wallet was created during the transaction use event
+	IsWalletNotCreated bool
 }
 
 type FundTransferResponse struct {

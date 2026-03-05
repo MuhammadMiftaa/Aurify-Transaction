@@ -3,8 +3,6 @@ package interceptor
 import (
 	"context"
 
-	"refina-transaction/config/log"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -107,14 +105,6 @@ func extractUserMetadata(ctx context.Context) context.Context {
 	}
 	if providerUID != "" {
 		ctx = context.WithValue(ctx, providerUserIDKey{}, providerUID)
-	}
-
-	if userID != "" {
-		log.Debug("grpc_user_metadata_extracted", map[string]any{
-			"user_id":  userID,
-			"email":    email,
-			"provider": provider,
-		})
 	}
 
 	return ctx

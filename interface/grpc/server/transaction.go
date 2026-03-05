@@ -29,13 +29,6 @@ type transactionServer struct {
 func (s *transactionServer) GetTransactions(req *tpb.GetTransactionOptions, stream tpb.TransactionService_GetTransactionsServer) error {
 	ctx := stream.Context()
 
-	userID := interceptor.UserIDFromContext(ctx)
-	log.Debug("GetTransactions called", map[string]any{
-		"service": data.GRPCServerService,
-		"user_id": userID,
-		"limit":   req.GetLimit(),
-	})
-
 	transactions, err := s.transactionService.GetAllTransactions(ctx)
 	if err != nil {
 		log.Error(data.LogGetTransactionsFailed, map[string]any{
@@ -60,13 +53,6 @@ func (s *transactionServer) GetTransactions(req *tpb.GetTransactionOptions, stre
 
 func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.GetUserTransactionsRequest) (*tpb.GetUserTransactionsResponse, error) {
 	userID := interceptor.UserIDFromContext(ctx)
-	log.Debug("GetUserTransactions called", map[string]any{
-		"service":    data.GRPCServerService,
-		"user_id":    userID,
-		"wallet_ids": req.GetWalletIds(),
-		"page_size":  req.GetPageSize(),
-		"cursor":     req.GetCursor(),
-	})
 
 	pageSize := req.GetPageSize()
 
@@ -178,6 +164,7 @@ func (s *transactionServer) CreateTransaction(ctx context.Context, req *tpb.Crea
 				Files:  req.GetAttachments(),
 			},
 		},
+		IsWalletNotCreated: req.GetIsWalletNotCreated(),
 	}
 
 	txn, err := s.transactionService.CreateTransaction(ctx, svcReq)
