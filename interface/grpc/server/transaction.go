@@ -91,8 +91,8 @@ func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.Ge
 	if page <= 0 {
 		page = 1
 	}
-	if pageSize <= 0 {
-		pageSize = 10
+	if pageSize < 0 {
+		pageSize = 9999
 	}
 	totalPages := (total + pageSize - 1) / pageSize
 
