@@ -1,9 +1,3 @@
-github.com/MuhammadMiftaa/Refina-Protobuf v1.6.1 h1:nbl29UeRmvfDBMaqbmIGo9BziBhv+BLDahdrPLfpCLk=
-github.com/MuhammadMiftaa/Refina-Protobuf v1.6.1/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
-github.com/MuhammadMiftaa/Refina-Protobuf v1.7.0 h1:NOkntItFranBI+yf26OVpQHH9K5AmNhiQAXPnpdtNHs=
-github.com/MuhammadMiftaa/Refina-Protobuf v1.7.0/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
-github.com/MuhammadMiftaa/Refina-Protobuf v1.7.1 h1:2VshmGDYwMd4Zjna3i4sy+9eqDL+54WaD/l26sqTaA8=
-github.com/MuhammadMiftaa/Refina-Protobuf v1.7.1/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
 github.com/MuhammadMiftaa/Refina-Protobuf v1.9.0 h1:+UGJUnYMIQIWTQUC1SJ3gdtpHmU/fcEmKbl7QWAAVrA=
 github.com/MuhammadMiftaa/Refina-Protobuf v1.9.0/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
 github.com/bytedance/sonic v1.13.3 h1:MS8gmaH16Gtirygw7jV91pDCN33NyMrPbN7qiYhEsF0=

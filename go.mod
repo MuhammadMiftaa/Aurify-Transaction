@@ -1,6 +1,6 @@
 module refina-transaction
 
-go 1.24.4
+go 1.25.0
 
 require (
 	github.com/MuhammadMiftaa/Refina-Protobuf v1.9.0
