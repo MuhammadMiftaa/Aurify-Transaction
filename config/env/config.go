@@ -11,10 +11,9 @@ import (
 
 type (
 	Server struct {
-		Mode         string `env:"MODE"`
-		HTTPPort     string `env:"HTTP_PORT"`
-		GRPCPort     string `env:"GRPC_PORT"`
-		JWTSecretKey string `env:"JWT_SECRET_KEY"`
+		Mode     string `env:"MODE"`
+		HTTPPort string `env:"HTTP_PORT"`
+		GRPCPort string `env:"GRPC_PORT"`
 	}
 
 	Database struct {
@@ -75,9 +74,6 @@ func LoadNative() ([]string, error) {
 	}
 	if Cfg.Server.GRPCPort, ok = os.LookupEnv("GRPC_PORT"); !ok {
 		missing = append(missing, "GRPC_PORT env is not set")
-	}
-	if Cfg.Server.JWTSecretKey, ok = os.LookupEnv("JWT_SECRET_KEY"); !ok {
-		missing = append(missing, "JWT_SECRET_KEY env is not set")
 	}
 	// ! ______________________________________________________
 
@@ -177,9 +173,6 @@ func LoadByViper() ([]string, error) {
 	}
 	if Cfg.Server.GRPCPort = config.GetString("GRPC_PORT"); Cfg.Server.GRPCPort == "" {
 		missing = append(missing, "GRPC_PORT env is not set")
-	}
-	if Cfg.Server.JWTSecretKey = config.GetString("JWT_SECRET_KEY"); Cfg.Server.JWTSecretKey == "" {
-		missing = append(missing, "JWT_SECRET_KEY env is not set")
 	}
 	// ! ______________________________________________________
 
