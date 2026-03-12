@@ -220,7 +220,7 @@ func (transactionHandler *TransactionHandler) UploadAttachment(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	attachment, err := transactionHandler.transactionServ.UploadAttachment(ctx, ID, payload.Files)
+	attachment, err := transactionHandler.transactionServ.UploadAttachment(ctx, nil, ID, payload.Files)
 	if err != nil {
 		log.Error(data.LogUploadAttachmentFailed, map[string]any{
 			"service":        data.TransactionService,

@@ -10,6 +10,7 @@ import (
 	"refina-transaction/internal/repository"
 	"refina-transaction/internal/types/dto"
 	"refina-transaction/internal/types/model"
+	"refina-transaction/internal/utils"
 	helper "refina-transaction/internal/utils"
 	"refina-transaction/internal/utils/data"
 
@@ -23,7 +24,7 @@ type TransactionsService interface {
 	GetTransactionsByCursor(ctx context.Context, q repository.CursorQuery) ([]dto.TransactionsResponse, int64, error)
 	CreateTransaction(ctx context.Context, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error)
 	FundTransfer(ctx context.Context, transaction dto.FundTransferRequest) (dto.FundTransferResponse, error)
-	UploadAttachment(ctx context.Context, transactionID string, files []string) ([]dto.AttachmentsResponse, error)
+	UploadAttachment(ctx context.Context, tx repository.Transaction, transactionID string, files []string) ([]dto.AttachmentsResponse, error)
 	UpdateTransaction(ctx context.Context, id string, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error)
 	DeleteTransaction(ctx context.Context, id string) (dto.TransactionsResponse, error)
 }
@@ -202,7 +203,7 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 				break
 			}
 
-			if _, err := transaction_serv.UploadAttachment(ctx, transactionNew.ID.String(), attachment.Files); err != nil {
+			if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionNew.ID.String(), attachment.Files); err != nil {
 				return dto.TransactionsResponse{}, fmt.Errorf("failed to upload attachment: %w", err)
 			}
 		}
@@ -366,7 +367,7 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 	return response, nil
 }
 
-func (transaction_serv *transactionsService) UploadAttachment(ctx context.Context, transactionID string, files []string) ([]dto.AttachmentsResponse, error) {
+func (transaction_serv *transactionsService) UploadAttachment(ctx context.Context, tx repository.Transaction, transactionID string, files []string) ([]dto.AttachmentsResponse, error) {
 	var attachmentResponses []dto.AttachmentsResponse
 
 	if transactionID == "" {
@@ -399,7 +400,7 @@ func (transaction_serv *transactionsService) UploadAttachment(ctx context.Contex
 			return nil, fmt.Errorf("invalid transaction id [id=%s]: %w", transactionID, err)
 		}
 
-		attachment, err := transaction_serv.attachmentRepo.CreateAttachment(ctx, nil, model.Attachments{
+		attachment, err := transaction_serv.attachmentRepo.CreateAttachment(ctx, tx, model.Attachments{
 			Image:         res.URL,
 			TransactionID: TransactionUUID,
 			Size:          res.Size,
@@ -533,7 +534,7 @@ func (transaction_serv *transactionsService) UpdateTransaction(ctx context.Conte
 	}
 
 	// ? Update transaction date
-	if !transaction.Date.IsZero() {
+	if !transaction.Date.IsZero() && !utils.SameDate(transaction.Date, transactionExist.TransactionDate) {
 		transactionExist.TransactionDate = transaction.Date
 	}
 
@@ -558,7 +559,7 @@ func (transaction_serv *transactionsService) UpdateTransaction(ctx context.Conte
 					return dto.TransactionsResponse{}, fmt.Errorf("no files to upload")
 				}
 
-				if _, err := transaction_serv.UploadAttachment(ctx, transactionUpdated.ID.String(), attachment.Files); err != nil {
+				if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionUpdated.ID.String(), attachment.Files); err != nil {
 					return dto.TransactionsResponse{}, fmt.Errorf("failed to upload attachment: %w", err)
 				}
 
