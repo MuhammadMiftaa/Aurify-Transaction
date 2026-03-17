@@ -13,6 +13,7 @@ import (
 
 type CategoriesService interface {
 	GetAllCategories(ctx context.Context) ([]dto.CategoriesResponse, error)
+	GetAllCategoriesFlat(ctx context.Context) ([]dto.CategoryFlat, error)
 	GetCategoryByID(ctx context.Context, id string) (dto.CategoriesResponse, error)
 	GetCategoriesByType(ctx context.Context, typeCategory string) ([]view.ViewCategoriesGroupByType, error)
 	CreateCategory(ctx context.Context, category dto.CategoriesRequest) (dto.CategoriesResponse, error)
@@ -71,6 +72,37 @@ func (category_serv *categoriesService) GetAllCategories(ctx context.Context) ([
 	}
 
 	return groupedCategories, nil
+}
+
+func (category_serv *categoriesService) GetAllCategoriesFlat(ctx context.Context) ([]dto.CategoryFlat, error) {
+	categories, err := category_serv.categoryRepository.GetAllCategories(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var flat []dto.CategoryFlat
+	for _, c := range categories {
+		parentID := ""
+		parentName := ""
+		if c.ParentID != nil {
+			parentID = c.ParentID.String()
+		}
+		if c.Parent != nil {
+			parentName = c.Parent.Name
+		}
+
+		flat = append(flat, dto.CategoryFlat{
+			ID:         c.ID.String(),
+			ParentID:   parentID,
+			ParentName: parentName,
+			Name:       c.Name,
+			Type:       dto.CategoryType(c.Type),
+			CreatedAt:  c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			UpdatedAt:  c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	return flat, nil
 }
 
 func (category_serv *categoriesService) GetCategoryByID(ctx context.Context, id string) (dto.CategoriesResponse, error) {

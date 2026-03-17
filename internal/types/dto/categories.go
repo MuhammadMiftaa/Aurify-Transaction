@@ -24,3 +24,14 @@ type CategoriesRequest struct {
 	Name     string       `json:"name"`
 	Type     CategoryType `json:"type"`
 }
+
+// CategoryFlat is a flat representation of a category for admin listing.
+type CategoryFlat struct {
+	ID         string       `json:"id"`
+	ParentID   string       `json:"parent_id"`
+	ParentName string       `json:"parent_name"`
+	Name       string       `json:"name"`
+	Type       CategoryType `json:"type"`
+	CreatedAt  string       `json:"created_at"`
+	UpdatedAt  string       `json:"updated_at"`
+}

@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"refina-transaction/config/log"
@@ -514,4 +516,165 @@ func toProtoAttachment(a dto.AttachmentsResponse) *tpb.Attachment {
 		Size:          a.Size,
 		CreatedAt:     a.CreatedAt,
 	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Admin Master Data RPCs
+// ──────────────────────────────────────────────────────────────────────────────
+
+func (s *transactionServer) ListCategories(ctx context.Context, req *tpb.ListCategoriesRequest) (*tpb.ListCategoriesResponse, error) {
+	page := int(req.GetPage())
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.GetPageSize())
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	sortBy := req.GetSortBy()
+	if sortBy == "" {
+		sortBy = "created_at"
+	}
+	sortOrder := req.GetSortOrder()
+	if sortOrder == "" {
+		sortOrder = "desc"
+	}
+	search := req.GetSearch()
+	filterType := req.GetType()
+
+	allCategories, err := s.categoryService.GetAllCategoriesFlat(ctx)
+	if err != nil {
+		log.Error(data.LogListCategoriesFailed, map[string]any{
+			"service": data.GRPCServerService,
+			"error":   err.Error(),
+		})
+		return nil, fmt.Errorf("list categories: %w", err)
+	}
+
+	// Filter
+	var filtered []dto.CategoryFlat
+	for _, c := range allCategories {
+		if filterType != "" && string(c.Type) != filterType {
+			continue
+		}
+		if search != "" {
+			s := strings.ToLower(search)
+			if !strings.Contains(strings.ToLower(c.Name), s) && !strings.Contains(strings.ToLower(string(c.Type)), s) {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+
+	total := int32(len(filtered))
+	totalPages := total / int32(pageSize)
+	if total%int32(pageSize) != 0 {
+		totalPages++
+	}
+
+	// Sort
+	sort.Slice(filtered, func(i, j int) bool {
+		var cmp bool
+		switch sortBy {
+		case "name":
+			cmp = strings.ToLower(filtered[i].Name) < strings.ToLower(filtered[j].Name)
+		case "type":
+			cmp = string(filtered[i].Type) < string(filtered[j].Type)
+		default:
+			cmp = filtered[i].ID < filtered[j].ID
+		}
+		if sortOrder == "desc" {
+			return !cmp
+		}
+		return cmp
+	})
+
+	// Paginate
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if start > len(filtered) {
+		start = len(filtered)
+	}
+	if end > len(filtered) {
+		end = len(filtered)
+	}
+	paged := filtered[start:end]
+
+	var protoCategories []*tpb.CategoryDetail
+	for _, c := range paged {
+		protoCategories = append(protoCategories, &tpb.CategoryDetail{
+			Id:         c.ID,
+			ParentId:   c.ParentID,
+			ParentName: c.ParentName,
+			Name:       c.Name,
+			Type:       string(c.Type),
+			CreatedAt:  c.CreatedAt,
+			UpdatedAt:  c.UpdatedAt,
+		})
+	}
+
+	log.Info(data.LogListCategoriesSuccess, map[string]any{
+		"service": data.GRPCServerService,
+		"total":   total,
+		"page":    page,
+	})
+
+	return &tpb.ListCategoriesResponse{
+		Categories: protoCategories,
+		Total:      total,
+		Page:       int32(page),
+		PageSize:   int32(pageSize),
+		TotalPages: totalPages,
+	}, nil
+}
+
+func (s *transactionServer) GetCategoryDetail(ctx context.Context, req *tpb.CategoryID) (*tpb.CategoryDetail, error) {
+	id := req.GetId()
+
+	category, err := s.categoryService.GetCategoryByID(ctx, id)
+	if err != nil {
+		log.Error(data.LogGetCategoryDetailFailed, map[string]any{
+			"service":     data.GRPCServerService,
+			"category_id": id,
+			"error":       err.Error(),
+		})
+		return nil, fmt.Errorf("get category detail [id=%s]: %w", id, err)
+	}
+
+	parentID := ""
+	parentName := ""
+	categoryID := ""
+	categoryName := ""
+	categoryType := ""
+
+	if len(category.Category) > 0 {
+		categoryID = category.Category[0].ID
+		categoryName = category.Category[0].Name
+	} else {
+		categoryName = category.GroupName
+	}
+
+	if category.GroupName != "" && len(category.Category) > 0 {
+		parentName = category.GroupName
+	}
+
+	categoryType = string(category.Type)
+
+	// For a simple child category
+	if categoryID == "" {
+		categoryID = id
+	}
+
+	log.Info(data.LogGetCategoryDetailSuccess, map[string]any{
+		"service":     data.GRPCServerService,
+		"category_id": id,
+	})
+
+	return &tpb.CategoryDetail{
+		Id:         categoryID,
+		ParentId:   parentID,
+		ParentName: parentName,
+		Name:       categoryName,
+		Type:       categoryType,
+	}, nil
 }

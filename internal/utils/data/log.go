@@ -122,4 +122,21 @@ const (
 	LogInvestmentEventSkipped           = "investment_event_skipped"
 	LogInvestmentBuyTransactionCreated  = "investment_buy_transaction_created"
 	LogInvestmentSellTransactionCreated = "investment_sell_transaction_created"
+
+	// --- admin consumer ---
+	AdminConsumerService      = "admin_consumer"
+	LogAdminConsumerStarted   = "admin_consumer_started"
+	LogAdminConsumerStopped   = "admin_consumer_stopped"
+	LogAdminConsumerFailed    = "admin_consumer_failed"
+	LogAdminEventHandleFailed = "admin_event_handle_failed"
+	LogAdminEventUnknown      = "admin_event_unknown_action"
+	LogAdminCategoryCreated   = "admin_category_created"
+	LogAdminCategoryUpdated   = "admin_category_updated"
+	LogAdminCategoryDeleted   = "admin_category_deleted"
+
+	// --- gRPC server (admin master data) ---
+	LogListCategoriesSuccess    = "list_categories_success"
+	LogListCategoriesFailed     = "list_categories_failed"
+	LogGetCategoryDetailSuccess = "get_category_detail_success"
+	LogGetCategoryDetailFailed  = "get_category_detail_failed"
 )

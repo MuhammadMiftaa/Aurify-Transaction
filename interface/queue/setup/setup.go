@@ -32,4 +32,9 @@ func SetupQueueConsumers(ctx context.Context, dbInstance db.DatabaseClient, mini
 
 	investmentConsumer := consumer.NewInvestmentEventConsumer(rmq, transactionService)
 	go investmentConsumer.Start(ctx)
+
+	// Admin event consumer for master data (transaction categories)
+	categoryService := service.NewCategoriesService(txManager, categoryRepo)
+	adminConsumer := consumer.NewAdminEventConsumer(rmq, categoryService)
+	go adminConsumer.Start(ctx)
 }

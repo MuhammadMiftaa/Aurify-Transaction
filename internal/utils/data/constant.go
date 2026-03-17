@@ -20,6 +20,11 @@ var (
 	EVENT_INVESTMENT_BUY  = "investment.buy"
 	EVENT_INVESTMENT_SELL = "investment.sell"
 
+	// Admin exchange and routing keys
+	ADMIN_EXCHANGE    = "refina_admin"
+	ADMIN_QUEUE       = "refina-admin-transaction-categories"
+	ADMIN_ROUTING_KEY = "master.transaction_categories"
+
 	CATEGORY_ID_INITIAL_DEPOSIT        = "00000000-0000-0000-0000-000000000000"
 	CATEGORY_ID_FUND_TRANSFER          = "00000000-0000-0000-0000-000000000010"
 	CATEGORY_ID_FUND_TRANSFER_CASH_IN  = "00000000-0000-0000-0000-000000000011"
