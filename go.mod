@@ -3,7 +3,7 @@ module refina-transaction
 go 1.25.0
 
 require (
-	github.com/MuhammadMiftaa/Refina-Protobuf v1.10.0
+	github.com/MuhammadMiftaa/Refina-Protobuf v1.11.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.11.1

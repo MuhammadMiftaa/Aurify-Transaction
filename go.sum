@@ -1,5 +1,7 @@
 github.com/MuhammadMiftaa/Refina-Protobuf v1.10.0 h1:EnTqZrnicKEwmV2ZA5GNT5uWTKaVVFK2oaAjeKOxctc=
 github.com/MuhammadMiftaa/Refina-Protobuf v1.10.0/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
+github.com/MuhammadMiftaa/Refina-Protobuf v1.11.0 h1:T2V812+4V5OOVNO4IE0YN8zHF7hODQhzcdFQjb52hY4=
+github.com/MuhammadMiftaa/Refina-Protobuf v1.11.0/go.mod h1:ObJ/jxEva0fnrS5h4d+Q14cyjHCzPgNS/CGsbSegUq4=
 github.com/bytedance/sonic v1.13.3 h1:MS8gmaH16Gtirygw7jV91pDCN33NyMrPbN7qiYhEsF0=
 github.com/bytedance/sonic v1.13.3/go.mod h1:o68xyaF9u2gvVBuGHPlUVCy+ZfmNNO5ETf1+KgkJhz4=
 github.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=
