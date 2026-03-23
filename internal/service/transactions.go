@@ -17,6 +17,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// Error message constants to avoid duplication (go:S1192)
+const (
+	errTransactionNotFound  = "transaction not found [id=%s]: %w"
+	errWalletNotFound       = "wallet not found [id=%s]: %w"
+	errInvalidTransactionType = "invalid transaction type [type=%s]"
+)
+
 type TransactionsService interface {
 	GetAllTransactions(ctx context.Context) ([]dto.TransactionsResponse, error)
 	GetTransactionByID(ctx context.Context, id string) (dto.TransactionsResponse, error)
@@ -69,7 +76,7 @@ func (transaction_serv *transactionsService) GetAllTransactions(ctx context.Cont
 func (transaction_serv *transactionsService) GetTransactionByID(ctx context.Context, id string) (dto.TransactionsResponse, error) {
 	transaction, err := transaction_serv.transactionRepo.GetTransactionByID(ctx, nil, id)
 	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("transaction not found [id=%s]: %w", id, err)
+		return dto.TransactionsResponse{}, fmt.Errorf(errTransactionNotFound, id, err)
 	}
 
 	transactionResponse := helper.ConvertToResponseType(transaction).(dto.TransactionsResponse)
@@ -129,6 +136,56 @@ func (transaction_serv *transactionsService) GetTransactionsByCursor(ctx context
 	return transactionResponses, total, nil
 }
 
+// updateWalletBalance adjusts wallet balance based on category type and direction.
+// direction: +1 means add amount to wallet, -1 means subtract.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) updateWalletBalance(ctx context.Context, walletID string, categoryType string, amount float64, direction int) error {
+	wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, walletID)
+	if err != nil {
+		return fmt.Errorf(errWalletNotFound, walletID, err)
+	}
+
+	switch categoryType {
+	case "expense":
+		wallet.Balance += float64(direction) * amount
+	case "income":
+		wallet.Balance -= float64(direction) * amount
+	default:
+		return fmt.Errorf(errInvalidTransactionType, categoryType)
+	}
+
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet); err != nil {
+		return fmt.Errorf("update wallet balance [wallet_id=%s]: %w", walletID, err)
+	}
+	return nil
+}
+
+// applyBalanceForCreate adjusts wallet balance when creating a transaction.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) applyBalanceForCreate(ctx context.Context, transaction dto.TransactionsRequest, categoryType string) error {
+	wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.WalletID)
+	if err != nil {
+		return fmt.Errorf(errWalletNotFound, transaction.WalletID, err)
+	}
+
+	switch categoryType {
+	case "expense":
+		if wallet.GetBalance() < transaction.Amount {
+			return fmt.Errorf("insufficient wallet balance [wallet_id=%s]", transaction.WalletID)
+		}
+		wallet.Balance -= transaction.Amount
+	case "income":
+		wallet.Balance += transaction.Amount
+	default:
+		return fmt.Errorf(errInvalidTransactionType, categoryType)
+	}
+
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet); err != nil {
+		return fmt.Errorf("update wallet balance [wallet_id=%s]: %w", transaction.WalletID, err)
+	}
+	return nil
+}
+
 func (transaction_serv *transactionsService) CreateTransaction(ctx context.Context, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error) {
 	category, err := transaction_serv.categoryRepo.GetCategoryByID(ctx, nil, transaction.CategoryID)
 	if err != nil {
@@ -142,7 +199,6 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 
 	defer tx.Rollback()
 
-	// Parse ID from JSON to valid UUID
 	CategoryID, err := helper.ParseUUID(transaction.CategoryID)
 	if err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("invalid category id [id=%s]: %w", transaction.CategoryID, err)
@@ -153,36 +209,12 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 		return dto.TransactionsResponse{}, fmt.Errorf("invalid wallet id [id=%s]: %w", transaction.WalletID, err)
 	}
 
-	// Check if wallet and category exist
 	if !transaction.IsWalletNotCreated {
-		wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.WalletID)
-		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transaction.WalletID, err)
-		}
-
-		// Check if transaction type is valid and update wallet balance
-		switch category.Type {
-		case "expense":
-			// Check if wallet has sufficient balance
-			if wallet.GetBalance() < transaction.Amount {
-				return dto.TransactionsResponse{}, fmt.Errorf("insufficient wallet balance [wallet_id=%s]", transaction.WalletID)
-			}
-
-			wallet.Balance -= transaction.Amount
-		case "income":
-			wallet.Balance += transaction.Amount
-		default:
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", category.Type)
-		}
-
-		// Update wallet balance
-		_, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet)
-		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("update wallet balance [wallet_id=%s]: %w", transaction.WalletID, err)
+		if err := transaction_serv.applyBalanceForCreate(ctx, transaction, string(category.Type)); err != nil {
+			return dto.TransactionsResponse{}, err
 		}
 	}
 
-	// Create transaction
 	transactionNew, err := transaction_serv.transactionRepo.CreateTransaction(ctx, tx, model.Transactions{
 		WalletID:        WalletID,
 		CategoryID:      CategoryID,
@@ -195,45 +227,54 @@ func (transaction_serv *transactionsService) CreateTransaction(ctx context.Conte
 		return dto.TransactionsResponse{}, fmt.Errorf("create transaction: insert to db: %w", err)
 	}
 
-	// ? If attachments exist, upload attachments
-	if len(transaction.Attachments) > 0 {
-		for _, attachment := range transaction.Attachments {
-			// * Create new attachment
-			if len(attachment.Files) == 0 {
-				break
-			}
-
-			if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionNew.ID.String(), attachment.Files); err != nil {
-				return dto.TransactionsResponse{}, fmt.Errorf("failed to upload attachment: %w", err)
-			}
-		}
+	if err := transaction_serv.processAttachments(ctx, tx, transactionNew.ID.String(), transaction.Attachments); err != nil {
+		return dto.TransactionsResponse{}, err
 	}
 
 	transactionResponse := helper.ConvertToResponseType(transactionNew).(dto.TransactionsResponse)
 
-	payload, err := json.Marshal(transactionResponse)
-	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("create transaction: marshal transaction response: %w", err)
-	}
-
-	outboxMsg := &model.OutboxMessage{
-		AggregateID: transactionResponse.ID,
-		EventType:   data.OUTBOX_EVENT_TRANSACTION_CREATED,
-		Payload:     payload,
-		Published:   false,
-		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
-	}
-
-	if err := transaction_serv.outboxRepository.Create(ctx, tx, outboxMsg); err != nil {
+	if err := transaction_serv.createOutboxMessage(ctx, tx, transactionResponse, data.OUTBOX_EVENT_TRANSACTION_CREATED); err != nil {
 		return dto.TransactionsResponse{}, err
 	}
 
-	// Commit transaksi jika semua sukses
 	if err := tx.Commit(); err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("create transaction: commit: %w", err)
 	}
 
 	return transactionResponse, nil
+}
+
+// processAttachments handles uploading attachments during create.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) processAttachments(ctx context.Context, tx repository.Transaction, transactionID string, attachments []dto.UpdateAttachmentsRequest) error {
+	for _, attachment := range attachments {
+		if len(attachment.Files) == 0 {
+			break
+		}
+		if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionID, attachment.Files); err != nil {
+			return fmt.Errorf("failed to upload attachment: %w", err)
+		}
+	}
+	return nil
+}
+
+// createOutboxMessage marshals a transaction response and persists it to the outbox.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) createOutboxMessage(ctx context.Context, tx repository.Transaction, response dto.TransactionsResponse, eventType string) error {
+	payload, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("marshal transaction response: %w", err)
+	}
+
+	outboxMsg := &model.OutboxMessage{
+		AggregateID: response.ID,
+		EventType:   eventType,
+		Payload:     payload,
+		Published:   false,
+		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
+	}
+
+	return transaction_serv.outboxRepository.Create(ctx, tx, outboxMsg)
 }
 
 func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, transaction dto.FundTransferRequest) (dto.FundTransferResponse, error) {
@@ -244,7 +285,6 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 
 	defer tx.Rollback()
 
-	// Check if wallet and category exist
 	fromWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.FromWalletID)
 	if err != nil {
 		return dto.FundTransferResponse{}, fmt.Errorf("source wallet not found [id=%s]: %w", transaction.FromWalletID, err)
@@ -255,12 +295,10 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		return dto.FundTransferResponse{}, fmt.Errorf("destination wallet not found [id=%s]: %w", transaction.ToWalletID, err)
 	}
 
-	// Check if wallet has sufficient balance
 	if fromWallet.GetBalance() < (transaction.Amount + transaction.AdminFee) {
 		return dto.FundTransferResponse{}, fmt.Errorf("insufficient wallet balance [wallet_id=%s]", transaction.FromWalletID)
 	}
 
-	// Check if source and destination wallets are the same
 	if fromWallet.GetId() == toWallet.GetId() {
 		return dto.FundTransferResponse{}, fmt.Errorf("source wallet and destination wallet cannot be the same [wallet_id=%s]", transaction.FromWalletID)
 	}
@@ -268,7 +306,6 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 	fromWallet.Balance -= (transaction.Amount + transaction.AdminFee)
 	toWallet.Balance += transaction.Amount
 
-	// Parse ID from JSON to valid UUID
 	FromWalletID, err := helper.ParseUUID(transaction.FromWalletID)
 	if err != nil {
 		return dto.FundTransferResponse{}, fmt.Errorf("invalid from wallet id [id=%s]: %w", transaction.FromWalletID, err)
@@ -279,7 +316,6 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		return dto.FundTransferResponse{}, fmt.Errorf("invalid to wallet id [id=%s]: %w", transaction.ToWalletID, err)
 	}
 
-	// Parse CategoryID from JSON to valid UUID
 	FromCategoryID, err := helper.ParseUUID(transaction.CashOutCategoryID)
 	if err != nil {
 		return dto.FundTransferResponse{}, fmt.Errorf("invalid from category id [id=%s]: %w", transaction.CashOutCategoryID, err)
@@ -290,7 +326,6 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		return dto.FundTransferResponse{}, fmt.Errorf("invalid to category id [id=%s]: %w", transaction.CashInCategoryID, err)
 	}
 
-	// Update wallet balance
 	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, fromWallet); err != nil {
 		return dto.FundTransferResponse{}, fmt.Errorf("update from wallet balance: %w", err)
 	}
@@ -320,33 +355,14 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		return dto.FundTransferResponse{}, fmt.Errorf("create to transaction: insert to db: %w", err)
 	}
 
-	transactionNewFromPayload, err := json.Marshal(helper.ConvertToResponseType(transactionNewFrom).(dto.TransactionsResponse))
-	if err != nil {
-		return dto.FundTransferResponse{}, fmt.Errorf("fund transfer: marshal from transaction response: %w", err)
-	}
+	fromResponse := helper.ConvertToResponseType(transactionNewFrom).(dto.TransactionsResponse)
+	toResponse := helper.ConvertToResponseType(transactionNewTo).(dto.TransactionsResponse)
 
-	transactionNewToPayload, err := json.Marshal(helper.ConvertToResponseType(transactionNewTo).(dto.TransactionsResponse))
-	if err != nil {
-		return dto.FundTransferResponse{}, fmt.Errorf("fund transfer: marshal to transaction response: %w", err)
-	}
-
-	if err := transaction_serv.outboxRepository.Create(ctx, tx, &model.OutboxMessage{
-		AggregateID: transactionNewFrom.ID.String(),
-		EventType:   data.OUTBOX_EVENT_TRANSACTION_CREATED,
-		Payload:     transactionNewFromPayload,
-		Published:   false,
-		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
-	}); err != nil {
+	if err := transaction_serv.createOutboxMessage(ctx, tx, fromResponse, data.OUTBOX_EVENT_TRANSACTION_CREATED); err != nil {
 		return dto.FundTransferResponse{}, err
 	}
 
-	if err := transaction_serv.outboxRepository.Create(ctx, tx, &model.OutboxMessage{
-		AggregateID: transactionNewTo.ID.String(),
-		EventType:   data.OUTBOX_EVENT_TRANSACTION_CREATED,
-		Payload:     transactionNewToPayload,
-		Published:   false,
-		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
-	}); err != nil {
+	if err := transaction_serv.createOutboxMessage(ctx, tx, toResponse, data.OUTBOX_EVENT_TRANSACTION_CREATED); err != nil {
 		return dto.FundTransferResponse{}, err
 	}
 
@@ -354,7 +370,7 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		return dto.FundTransferResponse{}, fmt.Errorf("fund transfer: commit: %w", err)
 	}
 
-	response := dto.FundTransferResponse{
+	return dto.FundTransferResponse{
 		CashOutTransactionID: transactionNewFrom.ID.String(),
 		CashInTransactionID:  transactionNewTo.ID.String(),
 		FromWalletID:         transaction.FromWalletID,
@@ -362,9 +378,7 @@ func (transaction_serv *transactionsService) FundTransfer(ctx context.Context, t
 		Amount:               transaction.Amount,
 		Date:                 transaction.Date,
 		Description:          transaction.Description,
-	}
-
-	return response, nil
+	}, nil
 }
 
 func (transaction_serv *transactionsService) UploadAttachment(ctx context.Context, tx repository.Transaction, transactionID string, files []string) ([]dto.AttachmentsResponse, error) {
@@ -382,7 +396,7 @@ func (transaction_serv *transactionsService) UploadAttachment(ctx context.Contex
 			return nil, fmt.Errorf("file is empty [index=%d]", idx)
 		}
 
-		ctx := context.Background()
+		// Use the passed ctx instead of context.Background() (godre:S8239)
 		fileReq := miniofs.UploadRequest{
 			Prefix:     fmt.Sprintf("%s_%s", miniofs.TRANSACTION_ATTACHMENT_PREFIX, transactionID),
 			Base64Data: file,
@@ -394,7 +408,6 @@ func (transaction_serv *transactionsService) UploadAttachment(ctx context.Contex
 			return nil, fmt.Errorf("upload file %d [transaction_id=%s]: %w", idx+1, transactionID, err)
 		}
 
-		// Save attachment to database
 		TransactionUUID, err := uuid.Parse(transactionID)
 		if err != nil {
 			return nil, fmt.Errorf("invalid transaction id [id=%s]: %w", transactionID, err)
@@ -410,38 +423,151 @@ func (transaction_serv *transactionsService) UploadAttachment(ctx context.Contex
 			return nil, fmt.Errorf("create attachment [transaction_id=%s]: %w", transactionID, err)
 		}
 
-		attachmentResponse := dto.AttachmentsResponse{
+		attachmentResponses = append(attachmentResponses, dto.AttachmentsResponse{
 			ID:            attachment.ID.String(),
 			Image:         attachment.Image,
 			TransactionID: attachment.TransactionID.String(),
 			CreatedAt:     attachment.CreatedAt.String(),
-		}
-
-		attachmentResponses = append(attachmentResponses, attachmentResponse)
+		})
 	}
 
 	return attachmentResponses, nil
 }
 
+// applyBalanceForWalletChange updates old and new wallet balances when changing wallet on update.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) applyBalanceForWalletChange(ctx context.Context, transactionExist model.Transactions, newWalletID string, newAmount float64) (model.Transactions, error) {
+	oldWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transactionExist.WalletID.String())
+	if err != nil {
+		return transactionExist, fmt.Errorf(errWalletNotFound, transactionExist.WalletID.String(), err)
+	}
+
+	switch transactionExist.Category.Type {
+	case "expense":
+		oldWallet.Balance += transactionExist.Amount
+	case "income":
+		oldWallet.Balance -= transactionExist.Amount
+	default:
+		return transactionExist, fmt.Errorf(errInvalidTransactionType, transactionExist.Category.Type)
+	}
+
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, oldWallet); err != nil {
+		return transactionExist, fmt.Errorf("update old wallet balance: %w", err)
+	}
+
+	newWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, newWalletID)
+	if err != nil {
+		return transactionExist, fmt.Errorf("new wallet not found [id=%s]: %w", newWalletID, err)
+	}
+
+	switch transactionExist.Category.Type {
+	case "expense":
+		newWallet.Balance -= newAmount
+	case "income":
+		newWallet.Balance += newAmount
+	default:
+		return transactionExist, fmt.Errorf(errInvalidTransactionType, transactionExist.Category.Type)
+	}
+
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, newWallet); err != nil {
+		return transactionExist, fmt.Errorf("update new wallet balance: %w", err)
+	}
+
+	walletUUID, err := helper.ParseUUID(newWalletID)
+	if err != nil {
+		return transactionExist, fmt.Errorf("invalid wallet id [id=%s]: %w", newWalletID, err)
+	}
+	transactionExist.WalletID = walletUUID
+	return transactionExist, nil
+}
+
+// applyBalanceForAmountChange updates wallet balance when only the amount changes.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) applyBalanceForAmountChange(ctx context.Context, transactionExist model.Transactions, newAmount float64) error {
+	oldWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transactionExist.WalletID.String())
+	if err != nil {
+		return fmt.Errorf(errWalletNotFound, transactionExist.WalletID.String(), err)
+	}
+
+	switch transactionExist.Category.Type {
+	case "expense":
+		oldWallet.Balance += transactionExist.Amount
+		oldWallet.Balance -= newAmount
+	case "income":
+		oldWallet.Balance -= transactionExist.Amount
+		oldWallet.Balance += newAmount
+	default:
+		return fmt.Errorf(errInvalidTransactionType, transactionExist.Category.Type)
+	}
+
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, oldWallet); err != nil {
+		return fmt.Errorf("update wallet balance: %w", err)
+	}
+	return nil
+}
+
+// handleUpdateAttachments processes attachment create/delete actions during update.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) handleUpdateAttachments(ctx context.Context, tx repository.Transaction, transactionID model.Transactions, attachments []dto.UpdateAttachmentsRequest) error {
+	for _, attachment := range attachments {
+		switch attachment.Status {
+		case "create":
+			if len(attachment.Files) == 0 {
+				return fmt.Errorf("no files to upload")
+			}
+			if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionID.ID.String(), attachment.Files); err != nil {
+				return fmt.Errorf("failed to upload attachment: %w", err)
+			}
+
+		case "delete":
+			if len(attachment.Files) == 0 {
+				return fmt.Errorf("no files to delete")
+			}
+			if err := transaction_serv.deleteAttachments(ctx, tx, transactionID, attachment.Files); err != nil {
+				return err
+			}
+
+		default:
+			return fmt.Errorf("invalid attachment status [status=%s]", attachment.Status)
+		}
+	}
+	return nil
+}
+
+// deleteAttachments deletes a list of attachments by ID, verifying ownership.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (transaction_serv *transactionsService) deleteAttachments(ctx context.Context, tx repository.Transaction, transactionUpdated model.Transactions, fileIDs []string) error {
+	for _, ID := range fileIDs {
+		attachmentToDelete, err := transaction_serv.attachmentRepo.GetAttachmentByID(ctx, tx, ID)
+		if err != nil {
+			return fmt.Errorf("attachment with file %s not found: %w", ID, err)
+		}
+
+		if attachmentToDelete.TransactionID != transactionUpdated.ID {
+			return fmt.Errorf("attachment with file %s does not belong to transaction %s", ID, transactionUpdated.ID)
+		}
+
+		if _, err := transaction_serv.attachmentRepo.DeleteAttachment(ctx, tx, attachmentToDelete); err != nil {
+			return fmt.Errorf("attachment with file %v not found: %w", attachmentToDelete, err)
+		}
+	}
+	return nil
+}
+
 func (transaction_serv *transactionsService) UpdateTransaction(ctx context.Context, id string, transaction dto.TransactionsRequest) (dto.TransactionsResponse, error) {
-	// ! Begin a new transaction
 	tx, err := transaction_serv.txManager.Begin(ctx)
 	if err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("update transaction: begin transaction: %w", err)
 	}
 
-	// ! Defer rollback if there is an error
 	defer tx.Rollback()
 
-	// ? Check if transaction exist
 	transactionExist, err := transaction_serv.transactionRepo.GetTransactionByID(ctx, tx, id)
 	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("transaction not found [id=%s]: %w", id, err)
+		return dto.TransactionsResponse{}, fmt.Errorf(errTransactionNotFound, id, err)
 	}
 
-	// ? If category ID is different, update category
 	if transaction.CategoryID != transactionExist.CategoryID.String() {
-		// * Check if category exist
 		_, err = transaction_serv.categoryRepo.GetCategoryByID(ctx, tx, transaction.CategoryID)
 		if err != nil {
 			return dto.TransactionsResponse{}, fmt.Errorf("category not found [id=%s]: %w", transaction.CategoryID, err)
@@ -455,169 +581,70 @@ func (transaction_serv *transactionsService) UpdateTransaction(ctx context.Conte
 		transactionExist.CategoryID = CategoryID
 	}
 
-	// ? If wallet ID is different, update wallet balance
 	if transaction.WalletID != transactionExist.WalletID.String() {
-		// *  Check if wallet exist
-		oldWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transactionExist.WalletID.String())
+		transactionExist, err = transaction_serv.applyBalanceForWalletChange(ctx, transactionExist, transaction.WalletID, transaction.Amount)
 		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transactionExist.WalletID.String(), err)
+			return dto.TransactionsResponse{}, err
 		}
-
-		// *  Update wallet balance
-		switch transactionExist.Category.Type {
-		case "expense":
-			oldWallet.Balance += transactionExist.Amount
-		case "income":
-			oldWallet.Balance -= transactionExist.Amount
-		default:
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", transactionExist.Category.Type)
-		}
-
-		if _, err = transaction_serv.walletClient.UpdateWallet(ctx, oldWallet); err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("update old wallet balance: %w", err)
-		}
-
-		// *  Check if new wallet exist
-		newWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transaction.WalletID)
-		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("new wallet not found [id=%s]: %w", transaction.WalletID, err)
-		}
-
-		// *  Update wallet balance
-		switch transactionExist.Category.Type {
-		case "expense":
-			newWallet.Balance -= transaction.Amount
-		case "income":
-			newWallet.Balance += transaction.Amount
-		default:
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", transactionExist.Category.Type)
-		}
-
-		if _, err = transaction_serv.walletClient.UpdateWallet(ctx, newWallet); err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("update new wallet balance: %w", err)
-		}
-
-		// *  Parse ID from JSON to valid UUID
-		WalletID, err := helper.ParseUUID(transaction.WalletID)
-		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid wallet id [id=%s]: %w", transaction.WalletID, err)
-		}
-		transactionExist.WalletID = WalletID
 	}
 
-	// ? Update transaction fields
 	if transaction.Amount != transactionExist.Amount {
-		// *  Update wallet balance
-		oldWallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transactionExist.WalletID.String())
-		if err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transactionExist.WalletID.String(), err)
+		if err := transaction_serv.applyBalanceForAmountChange(ctx, transactionExist, transaction.Amount); err != nil {
+			return dto.TransactionsResponse{}, err
 		}
-
-		// *  Update wallet balance
-		switch transactionExist.Category.Type {
-		case "expense":
-			oldWallet.Balance += transactionExist.Amount
-			oldWallet.Balance -= transaction.Amount
-		case "income":
-			oldWallet.Balance -= transactionExist.Amount
-			oldWallet.Balance += transaction.Amount
-		default:
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", transactionExist.Category.Type)
-		}
-
-		if _, err = transaction_serv.walletClient.UpdateWallet(ctx, oldWallet); err != nil {
-			return dto.TransactionsResponse{}, fmt.Errorf("update wallet balance: %w", err)
-		}
-
-		// *  Update transaction amount
 		transactionExist.Amount = transaction.Amount
 	}
 
-	// ? Update transaction date
 	if !transaction.Date.IsZero() && !utils.SameDate(transaction.Date, transactionExist.TransactionDate) {
 		transactionExist.TransactionDate = transaction.Date
 	}
 
-	// ? Update description
 	if transaction.Description != "" {
 		transactionExist.Description = transaction.Description
 	}
 
-	// ? Update transaction
 	transactionUpdated, err := transaction_serv.transactionRepo.UpdateTransaction(ctx, tx, transactionExist)
 	if err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("update transaction [id=%s]: update in db: %w", id, err)
 	}
 
-	// ? If attachments exist, update attachments
 	if len(transaction.Attachments) > 0 {
-		for _, attachment := range transaction.Attachments {
-			switch attachment.Status {
-			case "create":
-				// * Create new attachment
-				if len(attachment.Files) == 0 {
-					return dto.TransactionsResponse{}, fmt.Errorf("no files to upload")
-				}
-
-				if _, err := transaction_serv.UploadAttachment(ctx, tx, transactionUpdated.ID.String(), attachment.Files); err != nil {
-					return dto.TransactionsResponse{}, fmt.Errorf("failed to upload attachment: %w", err)
-				}
-
-			case "delete":
-				// * Delete attachment
-				if len(attachment.Files) == 0 {
-					return dto.TransactionsResponse{}, fmt.Errorf("no files to delete")
-				}
-
-				for _, ID := range attachment.Files {
-					// * Get attachment by ID
-					attachmentToDelete, err := transaction_serv.attachmentRepo.GetAttachmentByID(ctx, tx, ID)
-					if err != nil {
-						return dto.TransactionsResponse{}, fmt.Errorf("attachment with file %s not found: %w", ID, err)
-					}
-
-					// * Check if attachment belongs to transaction
-					if attachmentToDelete.TransactionID != transactionUpdated.ID {
-						return dto.TransactionsResponse{}, fmt.Errorf("attachment with file %s does not belong to transaction %s", ID, transactionUpdated.ID)
-					}
-
-					// * Delete file from database
-					if _, err := transaction_serv.attachmentRepo.DeleteAttachment(ctx, tx, attachmentToDelete); err != nil {
-						return dto.TransactionsResponse{}, fmt.Errorf("attachment with file %v not found: %w", attachmentToDelete, err)
-					}
-				}
-
-			default:
-				return dto.TransactionsResponse{}, fmt.Errorf("invalid attachment status [status=%s]", attachment.Status)
-			}
+		if err := transaction_serv.handleUpdateAttachments(ctx, tx, transactionUpdated, transaction.Attachments); err != nil {
+			return dto.TransactionsResponse{}, err
 		}
 	}
 
 	transactionResponse := helper.ConvertToResponseType(transactionUpdated).(dto.TransactionsResponse)
 
-	payload, err := json.Marshal(transactionResponse)
-	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("update transaction: marshal transaction response: %w", err)
-	}
-
-	outboxMsg := &model.OutboxMessage{
-		AggregateID: transactionResponse.ID,
-		EventType:   data.OUTBOX_EVENT_TRANSACTION_UPDATED,
-		Payload:     payload,
-		Published:   false,
-		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
-	}
-
-	if err := transaction_serv.outboxRepository.Create(ctx, tx, outboxMsg); err != nil {
+	if err := transaction_serv.createOutboxMessage(ctx, tx, transactionResponse, data.OUTBOX_EVENT_TRANSACTION_UPDATED); err != nil {
 		return dto.TransactionsResponse{}, err
 	}
 
-	// ! Commit transaction if all operations are successful
 	if err = tx.Commit(); err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("update transaction: commit: %w", err)
 	}
 
 	return transactionResponse, nil
+}
+
+// resolveWalletBalanceForDelete calculates the balance adjustment needed when deleting a transaction.
+// Extracted to reduce cognitive complexity (go:S3776).
+func resolveWalletBalanceAdjustment(categoryType string, categoryName string, amount float64, balance float64) (float64, error) {
+	switch categoryType {
+	case "expense":
+		return balance + amount, nil
+	case "income":
+		return balance - amount, nil
+	default:
+		switch categoryName {
+		case "Cash Out":
+			return balance + amount, nil
+		case "Cash In":
+			return balance - amount, nil
+		default:
+			return 0, fmt.Errorf(errInvalidTransactionType, categoryType)
+		}
+	}
 }
 
 func (transaction_serv *transactionsService) DeleteTransaction(ctx context.Context, id string) (dto.TransactionsResponse, error) {
@@ -628,40 +655,31 @@ func (transaction_serv *transactionsService) DeleteTransaction(ctx context.Conte
 
 	defer tx.Rollback()
 
-	// Check if transaction exist
 	transactionExist, err := transaction_serv.transactionRepo.GetTransactionByID(ctx, tx, id)
 	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("transaction not found [id=%s]: %w", id, err)
+		return dto.TransactionsResponse{}, fmt.Errorf(errTransactionNotFound, id, err)
 	}
 
-	// Get wallet to update balance
 	wallet, err := transaction_serv.walletClient.GetWalletByID(ctx, transactionExist.WalletID.String())
 	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("wallet not found [id=%s]: %w", transactionExist.WalletID.String(), err)
+		return dto.TransactionsResponse{}, fmt.Errorf(errWalletNotFound, transactionExist.WalletID.String(), err)
 	}
 
-	// Update wallet balance
-	if transactionExist.Category.Type == "expense" {
-		wallet.Balance += transactionExist.Amount
-	} else if transactionExist.Category.Type == "income" {
-		wallet.Balance -= transactionExist.Amount
-	} else {
-		if transactionExist.Category.Name == "Cash Out" {
-			wallet.Balance += transactionExist.Amount
-		} else if transactionExist.Category.Name == "Cash In" {
-			wallet.Balance -= transactionExist.Amount
-		} else {
-			return dto.TransactionsResponse{}, fmt.Errorf("invalid transaction type [type=%s]", transactionExist.Category.Type)
-		}
-	}
-
-	// Update wallet balance
-	_, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet)
+	newBalance, err := resolveWalletBalanceAdjustment(
+		string(transactionExist.Category.Type),
+		transactionExist.Category.Name,
+		transactionExist.Amount,
+		wallet.Balance,
+	)
 	if err != nil {
+		return dto.TransactionsResponse{}, err
+	}
+
+	wallet.Balance = newBalance
+	if _, err = transaction_serv.walletClient.UpdateWallet(ctx, wallet); err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("update wallet balance: %w", err)
 	}
 
-	// Delete transaction
 	transactionDeleted, err := transaction_serv.transactionRepo.DeleteTransaction(ctx, tx, transactionExist)
 	if err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("delete transaction [id=%s]: delete from db: %w", id, err)
@@ -669,24 +687,10 @@ func (transaction_serv *transactionsService) DeleteTransaction(ctx context.Conte
 
 	transactionResponse := helper.ConvertToResponseType(transactionDeleted).(dto.TransactionsResponse)
 
-	payload, err := json.Marshal(transactionResponse)
-	if err != nil {
-		return dto.TransactionsResponse{}, fmt.Errorf("delete transaction: marshal transaction response: %w", err)
-	}
-
-	outboxMsg := &model.OutboxMessage{
-		AggregateID: transactionResponse.ID,
-		EventType:   data.OUTBOX_EVENT_TRANSACTION_DELETED,
-		Payload:     payload,
-		Published:   false,
-		MaxRetries:  data.OUTBOX_PUBLISH_MAX_RETRIES,
-	}
-
-	if err := transaction_serv.outboxRepository.Create(ctx, tx, outboxMsg); err != nil {
+	if err := transaction_serv.createOutboxMessage(ctx, tx, transactionResponse, data.OUTBOX_EVENT_TRANSACTION_DELETED); err != nil {
 		return dto.TransactionsResponse{}, err
 	}
 
-	// Commit transaksi jika semua sukses
 	if err := tx.Commit(); err != nil {
 		return dto.TransactionsResponse{}, fmt.Errorf("delete transaction: commit: %w", err)
 	}

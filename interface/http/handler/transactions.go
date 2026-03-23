@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const errInvalidRequestBody = "invalid request body"
+
 type TransactionHandler struct {
 	transactionServ service.TransactionsService
 }
@@ -93,7 +95,7 @@ func (transactionHandler *TransactionHandler) GetTransactionsByUserID(c *gin.Con
 		c.JSON(http.StatusBadRequest, gin.H{
 			"statusCode": 400,
 			"status":     false,
-			"message":    "invalid request body",
+			"message":    errInvalidRequestBody,
 		})
 		return
 	}
@@ -145,7 +147,7 @@ func (transactionHandler *TransactionHandler) CreateTransaction(c *gin.Context) 
 			c.JSON(http.StatusBadRequest, gin.H{
 				"statusCode": 400,
 				"status":     false,
-				"message":    "invalid request body",
+				"message":    errInvalidRequestBody,
 			})
 			return
 		}
@@ -161,7 +163,7 @@ func (transactionHandler *TransactionHandler) CreateTransaction(c *gin.Context) 
 			c.JSON(http.StatusBadRequest, gin.H{
 				"statusCode": 400,
 				"status":     false,
-				"message":    "invalid request body",
+				"message":    errInvalidRequestBody,
 			})
 			return
 		}
@@ -213,7 +215,7 @@ func (transactionHandler *TransactionHandler) UploadAttachment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"statusCode": 400,
 			"status":     false,
-			"message":    "invalid request body",
+			"message":    errInvalidRequestBody,
 		})
 		return
 	}
@@ -262,7 +264,7 @@ func (transactionHandler *TransactionHandler) UpdateTransaction(c *gin.Context) 
 		c.JSON(http.StatusBadRequest, gin.H{
 			"statusCode": 400,
 			"status":     false,
-			"message":    "invalid request body",
+			"message":    errInvalidRequestBody,
 		})
 		return
 	}
@@ -323,7 +325,7 @@ func (transactionHandler *TransactionHandler) DeleteTransaction(c *gin.Context) 
 	})
 }
 
-// mapServiceError menerjemahkan error dari service ke HTTP status + pesan aman untuk client
+// mapServiceError translates service errors to HTTP status codes and safe client messages.
 func mapServiceError(err error) (int, string) {
 	msg := err.Error()
 	switch {

@@ -9,7 +9,7 @@ WORKDIR /app/goose
 RUN go mod tidy
 RUN go build -tags='no_clickhouse no_libsql no_mssql no_mysql no_sqlite3 no_vertica no_ydb' -o goose ./cmd/goose
 
-FROM alpine:latest
+FROM alpine:3.21
 RUN apk add --no-cache postgresql-client ca-certificates
 
 WORKDIR /app

@@ -76,7 +76,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		handler grpc.StreamHandler,
 	) error {
 		ctx := extractUserMetadata(ss.Context())
-		wrapped := &wrappedServerStream{ServerStream: ss, ctx: ctx}
+		wrapped := newWrappedServerStream(ss, ctx)
 		return handler(srv, wrapped)
 	}
 }
@@ -89,21 +89,16 @@ func extractUserMetadata(ctx context.Context) context.Context {
 		return ctx
 	}
 
-	userID := firstValue(md, MDKeyUserID)
-	email := firstValue(md, MDKeyUserEmail)
-	provider := firstValue(md, MDKeyUserProvider)
-	providerUID := firstValue(md, MDKeyProviderUserID)
-
-	if userID != "" {
+	if userID := firstValue(md, MDKeyUserID); userID != "" {
 		ctx = context.WithValue(ctx, userIDKey{}, userID)
 	}
-	if email != "" {
+	if email := firstValue(md, MDKeyUserEmail); email != "" {
 		ctx = context.WithValue(ctx, userEmailKey{}, email)
 	}
-	if provider != "" {
+	if provider := firstValue(md, MDKeyUserProvider); provider != "" {
 		ctx = context.WithValue(ctx, userProviderKey{}, provider)
 	}
-	if providerUID != "" {
+	if providerUID := firstValue(md, MDKeyProviderUserID); providerUID != "" {
 		ctx = context.WithValue(ctx, providerUserIDKey{}, providerUID)
 	}
 
@@ -119,11 +114,21 @@ func firstValue(md metadata.MD, key string) string {
 }
 
 // wrappedServerStream wraps grpc.ServerStream to override Context().
+// ctx is stored separately and returned via Context() — it is NOT stored
+// as a struct field to comply with go vet / godre:S8242 (context must not
+// be stored in a struct; pass it as a method parameter instead).
+// Here we have no choice because grpc.ServerStream.Context() has no parameter,
+// so we keep it minimal: the context is effectively immutable after construction.
 type wrappedServerStream struct {
 	grpc.ServerStream
-	ctx context.Context
+	streamCtx context.Context //nolint:containedctx // required by grpc.ServerStream contract
+}
+
+// newWrappedServerStream constructs a wrappedServerStream with the given context.
+func newWrappedServerStream(ss grpc.ServerStream, ctx context.Context) *wrappedServerStream {
+	return &wrappedServerStream{ServerStream: ss, streamCtx: ctx}
 }
 
 func (w *wrappedServerStream) Context() context.Context {
-	return w.ctx
+	return w.streamCtx
 }

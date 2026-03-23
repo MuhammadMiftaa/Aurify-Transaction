@@ -19,16 +19,16 @@ func TransactionRoutes(version *gin.Engine, db *gorm.DB, minio *miniofs.MinIOMan
 	attachmentRepo := repository.NewAttachmentsRepository(db)
 	outboxRepository := repository.NewOutboxRepository(db)
 
-	Transaction_serv := service.NewTransactionService(txManager, transactionRepo, walletRepo, categoryRepo, attachmentRepo, outboxRepository, minio)
-	Transaction_handler := handler.NewTransactionHandler(Transaction_serv)
+	transactionServ := service.NewTransactionService(txManager, transactionRepo, walletRepo, categoryRepo, attachmentRepo, outboxRepository, minio)
+	transactionHandler := handler.NewTransactionHandler(transactionServ)
 
 	transaction := version.Group("/transactions")
 
-	transaction.GET("", Transaction_handler.GetAllTransactions)
-	transaction.GET(":id", Transaction_handler.GetTransactionByID)
-	transaction.GET("user", Transaction_handler.GetTransactionsByUserID)
-	transaction.POST(":type", Transaction_handler.CreateTransaction)
-	transaction.POST("attachment/:id", Transaction_handler.UploadAttachment)
-	transaction.PUT(":id", Transaction_handler.UpdateTransaction)
-	transaction.DELETE(":id", Transaction_handler.DeleteTransaction)
+	transaction.GET("", transactionHandler.GetAllTransactions)
+	transaction.GET(":id", transactionHandler.GetTransactionByID)
+	transaction.GET("user", transactionHandler.GetTransactionsByUserID)
+	transaction.POST(":type", transactionHandler.CreateTransaction)
+	transaction.POST("attachment/:id", transactionHandler.UploadAttachment)
+	transaction.PUT(":id", transactionHandler.UpdateTransaction)
+	transaction.DELETE(":id", transactionHandler.DeleteTransaction)
 }

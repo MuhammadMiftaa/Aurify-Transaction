@@ -46,6 +46,45 @@ func init() {
 	}
 }
 
+// shutdownHTTP gracefully shuts down the HTTP server and records errors.
+// Extracted to reduce cognitive complexity (go:S3776).
+func shutdownHTTP(ctx context.Context, httpServer *http.Server, errors map[string]any) {
+	if httpServer == nil {
+		return
+	}
+	if err := httpServer.Shutdown(ctx); err != nil {
+		logger.Error(data.LogHTTPServerShutdownFailed, map[string]any{"service": data.HTTPServerService, "error": err.Error()})
+		errors["http_error"] = true
+	}
+}
+
+// shutdownGRPC gracefully stops the gRPC server and closes its client connections.
+// Extracted to reduce cognitive complexity (go:S3776).
+func shutdownGRPC(ctx context.Context, grpcServer interface{ GracefulStop() }, grpcManager *client.GRPCClientManager, errors map[string]any) {
+	if grpcServer == nil {
+		return
+	}
+	grpcServer.GracefulStop()
+	if err := grpcManager.Shutdown(ctx); err != nil {
+		logger.Error(data.LogGRPCClientShutdownFailed, map[string]any{"service": data.GRPCClientService, "error": err.Error()})
+		errors["grpc_error"] = true
+	}
+}
+
+// shutdownInfra closes RabbitMQ and database connections.
+// Extracted to reduce cognitive complexity (go:S3776).
+func shutdownInfra(queueInstance queueclient.RabbitMQClient, dbInstance db.DatabaseClient, errors map[string]any) {
+	if err := queueInstance.Close(); err != nil {
+		logger.Error(data.LogRabbitmqCloseFailed, map[string]any{"service": data.RabbitmqService, "error": err.Error()})
+		errors["rabbitmq_error"] = true
+	}
+
+	if err := dbInstance.Close(); err != nil {
+		logger.Error(data.LogDBCloseFailed, map[string]any{"service": data.DatabaseService, "error": err.Error()})
+		errors["database_error"] = true
+	}
+}
+
 func main() {
 	// Setup Database Connection
 	startTime := time.Now()
@@ -71,10 +110,7 @@ func main() {
 	outboxRepo := repository.NewOutboxRepository(dbInstance.GetDB())
 	outboxPublisher := service.NewOutboxPublisher(outboxRepo, queueInstance)
 
-	// Start outbox publisher worker
 	go outboxPublisher.Start(ctx)
-
-	// Start cleanup job (optional)
 	go outboxPublisher.StartCleanupJob(ctx)
 	logger.Info(data.LogOutboxPublisherStarted, map[string]any{"service": data.OutboxService, "duration": utils.Ms(time.Since(startTime))})
 
@@ -131,38 +167,14 @@ func main() {
 	startTime = time.Now()
 	shutdownErrors := map[string]any{"service": data.MainService}
 
-	// Shutdown HTTP server
-	if httpServer != nil {
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			logger.Error(data.LogHTTPServerShutdownFailed, map[string]any{"service": data.HTTPServerService, "error": err.Error()})
-			shutdownErrors["http_error"] = true
-		}
-	}
+	shutdownHTTP(shutdownCtx, httpServer, shutdownErrors)
 
 	// Cancel context to stop outbox publisher
 	cancel()
-	time.Sleep(2 * time.Second) // Give some time for outbox publisher to stop
+	time.Sleep(2 * time.Second)
 
-	// Shutdown gRPC server
-	if grpcServer != nil {
-		grpcServer.GracefulStop()
-		if err := grpcManager.Shutdown(shutdownCtx); err != nil {
-			logger.Error(data.LogGRPCClientShutdownFailed, map[string]any{"service": data.GRPCClientService, "error": err.Error()})
-			shutdownErrors["grpc_error"] = true
-		}
-	}
-
-	// Close RabbitMQ connection
-	if err := queueInstance.Close(); err != nil {
-		logger.Error(data.LogRabbitmqCloseFailed, map[string]any{"service": data.RabbitmqService, "error": err.Error()})
-		shutdownErrors["rabbitmq_error"] = true
-	}
-
-	// Close database connection
-	if err := dbInstance.Close(); err != nil {
-		logger.Error(data.LogDBCloseFailed, map[string]any{"service": data.DatabaseService, "error": err.Error()})
-		shutdownErrors["database_error"] = true
-	}
+	shutdownGRPC(shutdownCtx, grpcServer, grpcManager, shutdownErrors)
+	shutdownInfra(queueInstance, dbInstance, shutdownErrors)
 
 	if len(shutdownErrors) > 1 {
 		logger.Info(data.LogShutdownCompletedWithErrors, shutdownErrors)

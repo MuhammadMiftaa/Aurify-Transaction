@@ -33,6 +33,38 @@ func NewCategoriesService(txManager repository.TxManager, categoryRepository rep
 	}
 }
 
+// ensureGroupExists adds a group entry for a parent category if not already present.
+// Extracted to reduce cognitive complexity (go:S3776).
+func ensureGroupExists(groups *[]dto.CategoriesResponse, category model.Categories) {
+	for _, g := range *groups {
+		if g.GroupName == category.Name {
+			return
+		}
+	}
+	*groups = append(*groups, dto.CategoriesResponse{
+		GroupName: category.Name,
+		Type:      dto.CategoryType(category.Type),
+		Category:  []dto.Category{},
+	})
+}
+
+// appendChildToGroup appends a child category to its parent group.
+// Extracted to reduce cognitive complexity (go:S3776).
+func appendChildToGroup(groups []dto.CategoriesResponse, category model.Categories) []dto.CategoriesResponse {
+	if category.Parent == nil {
+		return groups
+	}
+	for i, group := range groups {
+		if group.GroupName == category.Parent.Name {
+			groups[i].Category = append(groups[i].Category, dto.Category{
+				ID:   category.ID.String(),
+				Name: category.Name,
+			})
+		}
+	}
+	return groups
+}
+
 func (category_serv *categoriesService) GetAllCategories(ctx context.Context) ([]dto.CategoriesResponse, error) {
 	categories, err := category_serv.categoryRepository.GetAllCategories(ctx, nil)
 	if err != nil {
@@ -42,32 +74,9 @@ func (category_serv *categoriesService) GetAllCategories(ctx context.Context) ([
 	var groupedCategories []dto.CategoriesResponse
 	for _, category := range categories {
 		if category.ParentID == nil {
-			exists := false
-			for _, group := range groupedCategories {
-				if group.GroupName == category.Name {
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				groupName := category.Name
-				groupedCategories = append(groupedCategories, dto.CategoriesResponse{
-					GroupName: groupName,
-					Type:      dto.CategoryType(category.Type),
-					Category:  []dto.Category{},
-				})
-			}
+			ensureGroupExists(&groupedCategories, category)
 		} else {
-			if category.Parent != nil {
-				for i, group := range groupedCategories {
-					if group.GroupName == category.Parent.Name {
-						groupedCategories[i].Category = append(groupedCategories[i].Category, dto.Category{
-							ID:   category.ID.String(),
-							Name: category.Name,
-						})
-					}
-				}
-			}
+			groupedCategories = appendChildToGroup(groupedCategories, category)
 		}
 	}
 

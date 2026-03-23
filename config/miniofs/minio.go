@@ -18,6 +18,16 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
+// String constants to avoid duplication (go:S1192)
+const (
+	TRANSACTION_ATTACHMENT_BUCKET = "refina-transaction-attachments"
+	TRANSACTION_ATTACHMENT_PREFIX = "transaction_attachments"
+	errMinIOClientNotReady        = "MinIO client not ready"
+	contentTypeOctetStream        = "application/octet-stream"
+	contentTypeGif                = "image/gif"
+	contentTypeZip                = "application/zip"
+)
+
 // FileValidationConfig holds validation rules
 type FileValidationConfig struct {
 	AllowedExtensions []string
@@ -124,18 +134,25 @@ func (m *MinIOManager) IsReady() bool {
 	return m.isReady
 }
 
-// validateBucket checks if bucket exists with caching
-func (m *MinIOManager) validateBucket(ctx context.Context, bucketName string) error {
+// validateBucketName checks basic naming rules for a bucket.
+// Extracted to reduce cognitive complexity (go:S3776).
+func validateBucketName(bucketName string) error {
 	if bucketName == "" {
 		return fmt.Errorf("bucket name cannot be empty")
 	}
-
-	// Basic validation
 	if len(bucketName) < 3 || len(bucketName) > 63 {
 		return fmt.Errorf("bucket name must be between 3 and 63 characters")
 	}
 	if strings.Contains(bucketName, " ") || strings.Contains(bucketName, "_") {
 		return fmt.Errorf("bucket name cannot contain spaces or underscores")
+	}
+	return nil
+}
+
+// validateBucket checks if bucket exists with caching
+func (m *MinIOManager) validateBucket(ctx context.Context, bucketName string) error {
+	if err := validateBucketName(bucketName); err != nil {
+		return err
 	}
 
 	// Check cache first
@@ -209,30 +226,14 @@ func (m *MinIOManager) Validate(data []byte, contentType string, config *FileVal
 			fileSize, config.MinFileSize)
 	}
 
-	// Validate file extension
-	if len(config.AllowedExtensions) > 0 {
-		ext := getExtensionFromContentType(contentType)
-		if ext == "" {
-			return fmt.Errorf("unable to determine file extension from content type: %s", contentType)
-		}
-
-		allowed := false
-		for _, allowedExt := range config.AllowedExtensions {
-			if ext == strings.ToLower(allowedExt) {
-				allowed = true
-				break
-			}
-		}
-		if !allowed {
-			return fmt.Errorf("file type '%s' (extension '%s') is not allowed. Allowed extensions: %v",
-				contentType, ext, config.AllowedExtensions)
-		}
+	if err := m.validateExtension(contentType, config.AllowedExtensions); err != nil {
+		return err
 	}
 
 	// Content consistency check
 	if len(data) > 0 {
 		detectedType := getContentTypeFromData(data)
-		if detectedType != "application/octet-stream" && contentType != detectedType {
+		if detectedType != contentTypeOctetStream && contentType != detectedType {
 			log.Warn("content_type_mismatch", map[string]any{
 				"service":       constant.MinioService,
 				"declared_type": contentType,
@@ -244,10 +245,31 @@ func (m *MinIOManager) Validate(data []byte, contentType string, config *FileVal
 	return nil
 }
 
+// validateExtension checks if the content type maps to an allowed extension.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (m *MinIOManager) validateExtension(contentType string, allowedExtensions []string) error {
+	if len(allowedExtensions) == 0 {
+		return nil
+	}
+
+	ext := getExtensionFromContentType(contentType)
+	if ext == "" {
+		return fmt.Errorf("unable to determine file extension from content type: %s", contentType)
+	}
+
+	for _, allowedExt := range allowedExtensions {
+		if ext == strings.ToLower(allowedExt) {
+			return nil
+		}
+	}
+	return fmt.Errorf("file type '%s' (extension '%s') is not allowed. Allowed extensions: %v",
+		contentType, ext, allowedExtensions)
+}
+
 // UploadFile uploads file to MinIO - main method yang digunakan
 func (m *MinIOManager) UploadFile(ctx context.Context, request UploadRequest) (*UploadResponse, error) {
 	if !m.IsReady() {
-		return nil, fmt.Errorf("MinIO client not ready")
+		return nil, fmt.Errorf(errMinIOClientNotReady)
 	}
 
 	// Validate bucket
@@ -295,7 +317,7 @@ func (m *MinIOManager) UploadFile(ctx context.Context, request UploadRequest) (*
 	}
 
 	// Generate URL
-	url := fmt.Sprintf("%s://%s/%s/%s",
+	fileURL := fmt.Sprintf("%s://%s/%s/%s",
 		getProtocol(m.config.UseSSL),
 		m.config.Host,
 		request.BucketName,
@@ -305,7 +327,7 @@ func (m *MinIOManager) UploadFile(ctx context.Context, request UploadRequest) (*
 		BucketName: request.BucketName,
 		ObjectName: objectName,
 		Size:       info.Size,
-		URL:        url,
+		URL:        fileURL,
 		Ext:        ext,
 		ETag:       info.ETag,
 	}, nil
@@ -314,7 +336,7 @@ func (m *MinIOManager) UploadFile(ctx context.Context, request UploadRequest) (*
 // GetFile retrieves file from MinIO
 func (m *MinIOManager) GetFile(ctx context.Context, bucketName, objectName string) (*minio.Object, error) {
 	if !m.IsReady() {
-		return nil, fmt.Errorf("MinIO client not ready")
+		return nil, fmt.Errorf(errMinIOClientNotReady)
 	}
 
 	if err := m.validateBucket(ctx, bucketName); err != nil {
@@ -327,7 +349,7 @@ func (m *MinIOManager) GetFile(ctx context.Context, bucketName, objectName strin
 // DeleteFile deletes file from MinIO
 func (m *MinIOManager) DeleteFile(ctx context.Context, bucketName, objectName string) error {
 	if !m.IsReady() {
-		return fmt.Errorf("MinIO client not ready")
+		return fmt.Errorf(errMinIOClientNotReady)
 	}
 
 	if err := m.validateBucket(ctx, bucketName); err != nil {
@@ -340,25 +362,25 @@ func (m *MinIOManager) DeleteFile(ctx context.Context, bucketName, objectName st
 // GetPresignedURL generates presigned URL for direct access
 func (m *MinIOManager) GetPresignedURL(ctx context.Context, bucketName, objectName string, expires time.Duration) (string, error) {
 	if !m.IsReady() {
-		return "", fmt.Errorf("MinIO client not ready")
+		return "", fmt.Errorf(errMinIOClientNotReady)
 	}
 
 	if err := m.validateBucket(ctx, bucketName); err != nil {
 		return "", err
 	}
 
-	url, err := m.client.PresignedGetObject(ctx, bucketName, objectName, expires, nil)
+	presignedURL, err := m.client.PresignedGetObject(ctx, bucketName, objectName, expires, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned URL: %v", err)
 	}
 
-	return url.String(), nil
+	return presignedURL.String(), nil
 }
 
 // ListObjects lists objects in bucket with prefix
 func (m *MinIOManager) ListObjects(ctx context.Context, bucketName, prefix string) ([]minio.ObjectInfo, error) {
 	if !m.IsReady() {
-		return nil, fmt.Errorf("MinIO client not ready")
+		return nil, fmt.Errorf(errMinIOClientNotReady)
 	}
 
 	if err := m.validateBucket(ctx, bucketName); err != nil {
@@ -381,32 +403,32 @@ func (m *MinIOManager) ListObjects(ctx context.Context, bucketName, prefix strin
 	return objects, nil
 }
 
-// Helper functions - tetap sama
+// Helper functions
 func getContentTypeFromData(data []byte) string {
 	if len(data) == 0 {
-		return "application/octet-stream"
+		return contentTypeOctetStream
 	}
 
 	signatures := map[string]string{
 		"\xFF\xD8\xFF":      "image/jpeg",
 		"\x89PNG\r\n\x1A\n": "image/png",
-		"GIF87a":            "image/gif",
-		"GIF89a":            "image/gif",
+		"GIF87a":            contentTypeGif,
+		"GIF89a":            contentTypeGif,
 		"\x00\x00\x01\x00":  "image/x-icon",
 		"RIFF":              "image/webp",
 		"%PDF":              "application/pdf",
-		"PK\x03\x04":        "application/zip",
-		"PK\x05\x06":        "application/zip",
-		"PK\x07\x08":        "application/zip",
+		"PK\x03\x04":        contentTypeZip,
+		"PK\x05\x06":        contentTypeZip,
+		"PK\x07\x08":        contentTypeZip,
 	}
 
-	dataStr := string(data[:min(len(data), 10)])
-	for signature, contentType := range signatures {
+	dataStr := string(data[:minInt(len(data), 10)])
+	for signature, ct := range signatures {
 		if strings.HasPrefix(dataStr, signature) {
-			return contentType
+			return ct
 		}
 	}
-	return "application/octet-stream"
+	return contentTypeOctetStream
 }
 
 func getExtensionFromContentType(contentType string) string {
@@ -414,12 +436,12 @@ func getExtensionFromContentType(contentType string) string {
 		"image/jpeg":               ".jpg",
 		"image/jpg":                ".jpg",
 		"image/png":                ".png",
-		"image/gif":                ".gif",
+		contentTypeGif:             ".gif",
 		"image/webp":               ".webp",
 		"image/x-icon":             ".ico",
 		"image/vnd.microsoft.icon": ".ico",
 		"application/pdf":          ".pdf",
-		"application/zip":          ".zip",
+		contentTypeZip:             ".zip",
 		"application/json":         ".json",
 		"text/plain":               ".txt",
 		"text/html":                ".html",
@@ -453,7 +475,7 @@ func getProtocol(useSSL bool) string {
 	return "http"
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
@@ -496,21 +518,20 @@ func ParseMinioURL(rawURL string) (bucket, objectKey string, err error) {
 	return bucket, objectKey, nil
 }
 
-func ExtractObjectNameFromURL(url string) string {
-	// Split by "/" and get the last part
-	parts := strings.Split(url, "/")
+func ExtractObjectNameFromURL(rawURL string) string {
+	parts := strings.Split(rawURL, "/")
 	if len(parts) > 0 {
 		return parts[len(parts)-1]
 	}
 	return ""
 }
 
-func ReplaceURL(url string) string {
-    separator := "/" + TRANSACTION_ATTACHMENT_BUCKET
-    parts := strings.Split(url, separator)
-    if len(parts) < 2 {
-        return url
-    }
-    parts[0] = env.Cfg.Minio.PublicURL
-    return strings.Join(parts, separator)
+func ReplaceURL(rawURL string) string {
+	separator := "/" + TRANSACTION_ATTACHMENT_BUCKET
+	parts := strings.Split(rawURL, separator)
+	if len(parts) < 2 {
+		return rawURL
+	}
+	parts[0] = env.Cfg.Minio.PublicURL
+	return strings.Join(parts, separator)
 }

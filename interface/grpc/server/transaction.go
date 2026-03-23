@@ -84,14 +84,12 @@ func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.Ge
 		return nil, fmt.Errorf("get user transactions: %w", err)
 	}
 
-	// Determine has_next by checking if we got more than pageSize
 	hasNext := false
 	if pageSize > 0 && int32(len(results)) > pageSize {
 		hasNext = true
-		results = results[:pageSize] // trim extra item
+		results = results[:pageSize]
 	}
 
-	// Build response
 	protoTxns := make([]*tpb.TransactionDetail, 0, len(results))
 	for _, txn := range results {
 		protoTxns = append(protoTxns, toProtoTransactionDetail(txn))
@@ -104,7 +102,6 @@ func (s *transactionServer) GetUserTransactions(ctx context.Context, req *tpb.Ge
 		HasNext:      hasNext,
 	}
 
-	// Set next cursor from last item
 	if len(results) > 0 {
 		last := results[len(results)-1]
 		resp.NextCursor = last.ID
@@ -248,7 +245,6 @@ func (s *transactionServer) UpdateTransaction(ctx context.Context, req *tpb.Upda
 		return nil, fmt.Errorf("update transaction: invalid date format: %w", err)
 	}
 
-	// Convert proto attachment actions → service DTO
 	attachmentActions := make([]dto.UpdateAttachmentsRequest, 0, len(req.GetAttachmentActions()))
 	for _, action := range req.GetAttachmentActions() {
 		attachmentActions = append(attachmentActions, dto.UpdateAttachmentsRequest{
@@ -313,63 +309,40 @@ func (s *transactionServer) DeleteTransaction(ctx context.Context, req *tpb.Tran
 // Category RPCs
 // ──────────────────────────────────────────────────────────────────────────────
 
+// buildCategoryGroupsFromView converts view categories to proto category groups.
+// Extracted to reduce cognitive complexity (go:S3776).
+func buildCategoryGroupsFromView(viewCategories []dto.CategoriesResponse) []*tpb.CategoryGroup {
+	groups := make([]*tpb.CategoryGroup, 0, len(viewCategories))
+	for _, cg := range viewCategories {
+		items := make([]*tpb.CategoryItem, 0, len(cg.Category))
+		for _, c := range cg.Category {
+			items = append(items, &tpb.CategoryItem{
+				Id:   c.ID,
+				Name: c.Name,
+			})
+		}
+		groups = append(groups, &tpb.CategoryGroup{
+			GroupName:  cg.GroupName,
+			Type:       string(cg.Type),
+			Categories: items,
+		})
+	}
+	return groups
+}
+
 func (s *transactionServer) GetCategories(ctx context.Context, req *tpb.GetCategoriesRequest) (*tpb.GetCategoriesResponse, error) {
 	userID := interceptor.UserIDFromContext(ctx)
 	filterType := req.GetType()
 
-	var categoryGroups []*tpb.CategoryGroup
-
-	if filterType != "" {
-		// Filter by type — use GetCategoriesByType which returns view structs
-		viewCategories, err := s.categoryService.GetCategoriesByType(ctx, filterType)
-		if err != nil {
-			log.Error(data.LogGetCategoriesGRPCFailed, map[string]any{
-				"service": data.GRPCServerService,
-				"user_id": userID,
-				"type":    filterType,
-				"error":   err.Error(),
-			})
-			return nil, fmt.Errorf("get categories by type [type=%s]: %w", filterType, err)
-		}
-		for _, vg := range viewCategories {
-			items := make([]*tpb.CategoryItem, 0, len(vg.Category))
-			for _, c := range vg.Category {
-				items = append(items, &tpb.CategoryItem{
-					Id:   c.ID,
-					Name: c.Name,
-				})
-			}
-			categoryGroups = append(categoryGroups, &tpb.CategoryGroup{
-				GroupName:  vg.GroupName,
-				Type:       vg.Type,
-				Categories: items,
-			})
-		}
-	} else {
-		// Get all categories grouped by parent
-		categories, err := s.categoryService.GetAllCategories(ctx)
-		if err != nil {
-			log.Error(data.LogGetCategoriesGRPCFailed, map[string]any{
-				"service": data.GRPCServerService,
-				"user_id": userID,
-				"error":   err.Error(),
-			})
-			return nil, fmt.Errorf("get all categories: %w", err)
-		}
-		for _, cg := range categories {
-			items := make([]*tpb.CategoryItem, 0, len(cg.Category))
-			for _, c := range cg.Category {
-				items = append(items, &tpb.CategoryItem{
-					Id:   c.ID,
-					Name: c.Name,
-				})
-			}
-			categoryGroups = append(categoryGroups, &tpb.CategoryGroup{
-				GroupName:  cg.GroupName,
-				Type:       string(cg.Type),
-				Categories: items,
-			})
-		}
+	categoryGroups, err := s.fetchCategoryGroups(ctx, filterType)
+	if err != nil {
+		log.Error(data.LogGetCategoriesGRPCFailed, map[string]any{
+			"service": data.GRPCServerService,
+			"user_id": userID,
+			"type":    filterType,
+			"error":   err.Error(),
+		})
+		return nil, err
 	}
 
 	log.Info(data.LogGetCategoriesGRPCSuccess, map[string]any{
@@ -382,6 +355,40 @@ func (s *transactionServer) GetCategories(ctx context.Context, req *tpb.GetCateg
 	return &tpb.GetCategoriesResponse{
 		Categories: categoryGroups,
 	}, nil
+}
+
+// fetchCategoryGroups retrieves category groups, filtering by type when provided.
+// Extracted to reduce cognitive complexity (go:S3776).
+func (s *transactionServer) fetchCategoryGroups(ctx context.Context, filterType string) ([]*tpb.CategoryGroup, error) {
+	if filterType != "" {
+		viewCategories, err := s.categoryService.GetCategoriesByType(ctx, filterType)
+		if err != nil {
+			return nil, fmt.Errorf("get categories by type [type=%s]: %w", filterType, err)
+		}
+
+		groups := make([]*tpb.CategoryGroup, 0, len(viewCategories))
+		for _, vg := range viewCategories {
+			items := make([]*tpb.CategoryItem, 0, len(vg.Category))
+			for _, c := range vg.Category {
+				items = append(items, &tpb.CategoryItem{
+					Id:   c.ID,
+					Name: c.Name,
+				})
+			}
+			groups = append(groups, &tpb.CategoryGroup{
+				GroupName:  vg.GroupName,
+				Type:       vg.Type,
+				Categories: items,
+			})
+		}
+		return groups, nil
+	}
+
+	categories, err := s.categoryService.GetAllCategories(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get all categories: %w", err)
+	}
+	return buildCategoryGroupsFromView(categories), nil
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -522,6 +529,45 @@ func toProtoAttachment(a dto.AttachmentsResponse) *tpb.Attachment {
 // Admin Master Data RPCs
 // ──────────────────────────────────────────────────────────────────────────────
 
+// filterCategories applies type and search filters to a flat category list.
+// Extracted to reduce cognitive complexity (go:S3776).
+func filterCategories(allCategories []dto.CategoryFlat, filterType string, search string) []dto.CategoryFlat {
+	var filtered []dto.CategoryFlat
+	for _, c := range allCategories {
+		if filterType != "" && string(c.Type) != filterType {
+			continue
+		}
+		if search != "" {
+			s := strings.ToLower(search)
+			if !strings.Contains(strings.ToLower(c.Name), s) && !strings.Contains(strings.ToLower(string(c.Type)), s) {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+	return filtered
+}
+
+// sortCategories sorts a flat category list by the given field and order.
+// Extracted to reduce cognitive complexity (go:S3776).
+func sortCategories(filtered []dto.CategoryFlat, sortBy string, sortOrder string) {
+	sort.Slice(filtered, func(i, j int) bool {
+		var cmp bool
+		switch sortBy {
+		case "name":
+			cmp = strings.ToLower(filtered[i].Name) < strings.ToLower(filtered[j].Name)
+		case "type":
+			cmp = string(filtered[i].Type) < string(filtered[j].Type)
+		default:
+			cmp = filtered[i].ID < filtered[j].ID
+		}
+		if sortOrder == "desc" {
+			return !cmp
+		}
+		return cmp
+	})
+}
+
 func (s *transactionServer) ListCategories(ctx context.Context, req *tpb.ListCategoriesRequest) (*tpb.ListCategoriesResponse, error) {
 	page := int(req.GetPage())
 	if page < 1 {
@@ -539,8 +585,6 @@ func (s *transactionServer) ListCategories(ctx context.Context, req *tpb.ListCat
 	if sortOrder == "" {
 		sortOrder = "desc"
 	}
-	search := req.GetSearch()
-	filterType := req.GetType()
 
 	allCategories, err := s.categoryService.GetAllCategoriesFlat(ctx)
 	if err != nil {
@@ -551,20 +595,7 @@ func (s *transactionServer) ListCategories(ctx context.Context, req *tpb.ListCat
 		return nil, fmt.Errorf("list categories: %w", err)
 	}
 
-	// Filter
-	var filtered []dto.CategoryFlat
-	for _, c := range allCategories {
-		if filterType != "" && string(c.Type) != filterType {
-			continue
-		}
-		if search != "" {
-			s := strings.ToLower(search)
-			if !strings.Contains(strings.ToLower(c.Name), s) && !strings.Contains(strings.ToLower(string(c.Type)), s) {
-				continue
-			}
-		}
-		filtered = append(filtered, c)
-	}
+	filtered := filterCategories(allCategories, req.GetType(), req.GetSearch())
 
 	total := int32(len(filtered))
 	totalPages := total / int32(pageSize)
@@ -572,24 +603,8 @@ func (s *transactionServer) ListCategories(ctx context.Context, req *tpb.ListCat
 		totalPages++
 	}
 
-	// Sort
-	sort.Slice(filtered, func(i, j int) bool {
-		var cmp bool
-		switch sortBy {
-		case "name":
-			cmp = strings.ToLower(filtered[i].Name) < strings.ToLower(filtered[j].Name)
-		case "type":
-			cmp = string(filtered[i].Type) < string(filtered[j].Type)
-		default:
-			cmp = filtered[i].ID < filtered[j].ID
-		}
-		if sortOrder == "desc" {
-			return !cmp
-		}
-		return cmp
-	})
+	sortCategories(filtered, sortBy, sortOrder)
 
-	// Paginate
 	start := (page - 1) * pageSize
 	end := start + pageSize
 	if start > len(filtered) {
@@ -660,7 +675,6 @@ func (s *transactionServer) GetCategoryDetail(ctx context.Context, req *tpb.Cate
 
 	categoryType = string(category.Type)
 
-	// For a simple child category
 	if categoryID == "" {
 		categoryID = id
 	}
