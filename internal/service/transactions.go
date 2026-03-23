@@ -401,7 +401,7 @@ func (transaction_serv *transactionsService) UploadAttachment(ctx context.Contex
 		}
 
 		attachment, err := transaction_serv.attachmentRepo.CreateAttachment(ctx, tx, model.Attachments{
-			Image:         res.URL,
+			Image:         miniofs.ReplaceURL(res.URL),
 			TransactionID: TransactionUUID,
 			Size:          res.Size,
 			Format:        res.Ext,

@@ -504,3 +504,13 @@ func ExtractObjectNameFromURL(url string) string {
 	}
 	return ""
 }
+
+func ReplaceURL(url string) string {
+    separator := "/" + TRANSACTION_ATTACHMENT_BUCKET
+    parts := strings.Split(url, separator)
+    if len(parts) < 2 {
+        return url
+    }
+    parts[0] = env.Cfg.Minio.PublicURL
+    return strings.Join(parts, separator)
+}
