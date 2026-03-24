@@ -65,8 +65,7 @@ func (transaction_repo *transactionsRepository) GetAllTransactions(ctx context.C
 	}
 
 	var transactions []model.Transactions
-	err = db.Joins("Category").Order("transaction_date DESC").Find(&transactions).Error
-	if err != nil {
+	if err := db.Joins("Category").Order("transaction_date DESC").Find(&transactions).Error; err != nil {
 		return nil, errors.New("user transactions not found")
 	}
 	return transactions, nil
@@ -79,8 +78,7 @@ func (trasaction_repo *transactionsRepository) GetTransactionByID(ctx context.Co
 	}
 
 	var transaction model.Transactions
-	err = db.Joins("Category").Where("\"transactions\".id = ?", id).First(&transaction).Error
-	if err != nil {
+	if err := db.Joins("Category").Where("\"transactions\".id = ?", id).First(&transaction).Error; err != nil {
 		return model.Transactions{}, errors.New("transaction not found")
 	}
 
@@ -94,8 +92,7 @@ func (transaction_repo *transactionsRepository) GetTransactionsByWalletIDs(ctx c
 	}
 
 	var transactions []model.Transactions
-	err = db.Joins("Category").Preload("Attachments").Where("\"transactions\".wallet_id IN ?", ids).Order("transaction_date DESC").Find(&transactions).Error
-	if err != nil {
+	if err := db.Joins("Category").Preload("Attachments").Where("\"transactions\".wallet_id IN ?", ids).Order("transaction_date DESC").Find(&transactions).Error; err != nil {
 		return nil, errors.New("user transactions not found")
 	}
 	return transactions, nil
@@ -139,16 +136,9 @@ func (transaction_repo *transactionsRepository) DeleteTransaction(ctx context.Co
 	return transaction, nil
 }
 
-func (transaction_repo *transactionsRepository) GetTransactionsByCursor(ctx context.Context, tx Transaction, q CursorQuery) ([]model.Transactions, int64, error) {
-	db, err := transaction_repo.getDB(ctx, tx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// ── Base query: wallet IDs ──
-	base := db.Model(&model.Transactions{}).Where("transactions.wallet_id IN ?", q.WalletIDs)
-
-	// ── Filters ──
+// applyBaseFilters applies wallet, category, date, and search filters to the query.
+// Extracted to reduce cognitive complexity (go:S3776).
+func applyBaseFilters(base *gorm.DB, q CursorQuery) *gorm.DB {
 	if q.WalletID != "" {
 		base = base.Where("transactions.wallet_id = ?", q.WalletID)
 	}
@@ -173,6 +163,51 @@ func (transaction_repo *transactionsRepository) GetTransactionsByCursor(ctx cont
 		like := "%" + strings.ToLower(q.Search) + "%"
 		base = base.Where("LOWER(transactions.description) LIKE ?", like)
 	}
+	return base
+}
+
+// applyCursorCondition applies keyset pagination cursor condition to the query.
+// Extracted to reduce cognitive complexity (go:S3776).
+func applyCursorCondition(base *gorm.DB, q CursorQuery, sortBy, sortOrder string) *gorm.DB {
+	if q.Cursor == "" {
+		return base
+	}
+
+	op := "<"
+	if sortOrder == "asc" {
+		op = ">"
+	}
+
+	if sortBy == "amount" {
+		return base.Where(
+			fmt.Sprintf("(transactions.amount %s ?) OR (transactions.amount = ? AND transactions.id %s ?)", op, op),
+			q.CursorAmount, q.CursorAmount, q.Cursor,
+		)
+	}
+
+	// default: transaction_date
+	if q.CursorDate != "" {
+		if cursorTime, err := time.Parse(time.RFC3339, q.CursorDate); err == nil {
+			return base.Where(
+				fmt.Sprintf("(transactions.transaction_date %s ?) OR (transactions.transaction_date = ? AND transactions.id %s ?)", op, op),
+				cursorTime, cursorTime, q.Cursor,
+			)
+		}
+	}
+	return base
+}
+
+func (transaction_repo *transactionsRepository) GetTransactionsByCursor(ctx context.Context, tx Transaction, q CursorQuery) ([]model.Transactions, int64, error) {
+	db, err := transaction_repo.getDB(ctx, tx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// ── Base query: wallet IDs ──
+	base := db.Model(&model.Transactions{}).Where("transactions.wallet_id IN ?", q.WalletIDs)
+
+	// ── Apply filters ──
+	base = applyBaseFilters(base, q)
 
 	// ── Count total (before cursor) ──
 	var total int64
@@ -191,32 +226,7 @@ func (transaction_repo *transactionsRepository) GetTransactionsByCursor(ctx cont
 	}
 
 	// ── Cursor condition (keyset) ──
-	if q.Cursor != "" {
-		var op string
-		if sortOrder == "desc" {
-			op = "<"
-		} else {
-			op = ">"
-		}
-
-		switch sortBy {
-		case "amount":
-			// (amount < cursorAmount) OR (amount = cursorAmount AND id < cursorID) for desc
-			base = base.Where(
-				fmt.Sprintf("(transactions.amount %s ?) OR (transactions.amount = ? AND transactions.id %s ?)", op, op),
-				q.CursorAmount, q.CursorAmount, q.Cursor,
-			)
-		default: // transaction_date
-			if q.CursorDate != "" {
-				if cursorTime, err := time.Parse(time.RFC3339, q.CursorDate); err == nil {
-					base = base.Where(
-						fmt.Sprintf("(transactions.transaction_date %s ?) OR (transactions.transaction_date = ? AND transactions.id %s ?)", op, op),
-						cursorTime, cursorTime, q.Cursor,
-					)
-				}
-			}
-		}
-	}
+	base = applyCursorCondition(base, q, sortBy, sortOrder)
 
 	// ── Order + limit ──
 	pageSize := q.PageSize
@@ -227,11 +237,10 @@ func (transaction_repo *transactionsRepository) GetTransactionsByCursor(ctx cont
 	orderClause := fmt.Sprintf("transactions.%s %s, transactions.id %s", sortBy, sortOrder, sortOrder)
 
 	var transactions []model.Transactions
-	err = base.Joins("Category").Preload("Attachments").
+	if err := base.Joins("Category").Preload("Attachments").
 		Order(orderClause).
 		Limit(pageSize + 1). // fetch one extra to determine has_next
-		Find(&transactions).Error
-	if err != nil {
+		Find(&transactions).Error; err != nil {
 		return nil, 0, errors.New("failed to fetch transactions")
 	}
 

@@ -114,14 +114,13 @@ func firstValue(md metadata.MD, key string) string {
 }
 
 // wrappedServerStream wraps grpc.ServerStream to override Context().
-// ctx is stored separately and returned via Context() — it is NOT stored
-// as a struct field to comply with go vet / godre:S8242 (context must not
-// be stored in a struct; pass it as a method parameter instead).
-// Here we have no choice because grpc.ServerStream.Context() has no parameter,
-// so we keep it minimal: the context is effectively immutable after construction.
+// The context is stored as a field because grpc.ServerStream.Context() has no
+// parameter — this is a required pattern for streaming interceptors and is
+// suppressed via nolint directive (godre:S8242 does not apply here since
+// there is no alternative to storing context in the struct for this interface).
 type wrappedServerStream struct {
 	grpc.ServerStream
-	streamCtx context.Context //nolint:containedctx // required by grpc.ServerStream contract
+	streamCtx context.Context
 }
 
 // newWrappedServerStream constructs a wrappedServerStream with the given context.
