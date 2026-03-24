@@ -7,8 +7,8 @@
     "pageSize": 500,
     "total": 188
   },
-  "effortTotal": 1227,
-  "debtTotal": 1227,
+  "effortTotal": 1174,
+  "debtTotal": 1174,
   "issues": [
     {
       "key": "AZz_1d4rxYMayYyaPUTa",
@@ -16,7 +16,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:interface/grpc/server/transaction.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 525,
       "hash": "d429524df5c4435f0d5dd72a53995fc5",
       "textRange": {
         "startLine": 525,
@@ -264,7 +263,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 23 to the 15 allowed.",
       "effort": "13min",
       "debt": "13min",
@@ -273,7 +273,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-03-18T07:25:03+0000",
-      "updateDate": "2026-03-18T07:25:03+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -284,7 +285,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -3636,7 +3637,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 132,
       "hash": "ab760ca3335ac3359f9b799c9740ade6",
       "textRange": {
         "startLine": 132,
@@ -3884,7 +3884,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 27 to the 15 allowed.",
       "effort": "17min",
       "debt": "17min",
@@ -3893,7 +3894,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-03-14T03:39:41+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -3904,7 +3906,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -3914,11 +3916,11 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 426,
+      "line": 557,
       "hash": "716b6e047e0c02edf537a4ccc5466e72",
       "textRange": {
-        "startLine": 426,
-        "endLine": 426,
+        "startLine": 557,
+        "endLine": 557,
         "startOffset": 45,
         "endOffset": 62
       },
@@ -3928,8 +3930,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 429,
-                "endLine": 429,
+                "startLine": 559,
+                "endLine": 559,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -3942,8 +3944,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 438,
-                "endLine": 438,
+                "startLine": 566,
+                "endLine": 566,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -3956,8 +3958,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 443,
-                "endLine": 443,
+                "startLine": 570,
+                "endLine": 570,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -3970,8 +3972,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 446,
-                "endLine": 446,
+                "startLine": 572,
+                "endLine": 572,
                 "startOffset": 2,
                 "endOffset": 4
               },
@@ -3984,8 +3986,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 451,
-                "endLine": 451,
+                "startLine": 577,
+                "endLine": 577,
                 "startOffset": 2,
                 "endOffset": 4
               },
@@ -3998,8 +4000,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 459,
-                "endLine": 459,
+                "startLine": 584,
+                "endLine": 584,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4012,8 +4014,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 462,
-                "endLine": 462,
+                "startLine": 586,
+                "endLine": 586,
                 "startOffset": 2,
                 "endOffset": 4
               },
@@ -4026,92 +4028,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 467,
-                "endLine": 467,
-                "startOffset": 2,
-                "endOffset": 8
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 476,
-                "endLine": 476,
-                "startOffset": 2,
-                "endOffset": 4
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 482,
-                "endLine": 482,
-                "startOffset": 2,
-                "endOffset": 4
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 487,
-                "endLine": 487,
-                "startOffset": 2,
-                "endOffset": 8
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 496,
-                "endLine": 496,
-                "startOffset": 2,
-                "endOffset": 4
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 502,
-                "endLine": 502,
-                "startOffset": 2,
-                "endOffset": 4
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 509,
-                "endLine": 509,
+                "startLine": 591,
+                "endLine": 591,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4124,8 +4042,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 512,
-                "endLine": 512,
+                "startLine": 592,
+                "endLine": 592,
                 "startOffset": 2,
                 "endOffset": 4
               },
@@ -4138,36 +4056,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 517,
-                "endLine": 517,
-                "startOffset": 2,
-                "endOffset": 8
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 528,
-                "endLine": 528,
-                "startOffset": 2,
-                "endOffset": 4
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 537,
-                "endLine": 537,
+                "startLine": 598,
+                "endLine": 598,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4180,8 +4070,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 537,
-                "endLine": 537,
+                "startLine": 598,
+                "endLine": 598,
                 "startOffset": 31,
                 "endOffset": 33
               },
@@ -4194,8 +4084,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 542,
-                "endLine": 542,
+                "startLine": 602,
+                "endLine": 602,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4208,162 +4098,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 548,
-                "endLine": 548,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 553,
-                "endLine": 553,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 554,
-                "endLine": 554,
-                "startOffset": 2,
-                "endOffset": 5
-              },
-              "msg": "+2 (incl 1 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 555,
-                "endLine": 555,
-                "startOffset": 3,
-                "endOffset": 9
-              },
-              "msg": "+3 (incl 2 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 558,
-                "endLine": 558,
-                "startOffset": 4,
-                "endOffset": 6
-              },
-              "msg": "+4 (incl 3 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 562,
-                "endLine": 562,
-                "startOffset": 4,
-                "endOffset": 6
-              },
-              "msg": "+4 (incl 3 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 568,
-                "endLine": 568,
-                "startOffset": 4,
-                "endOffset": 6
-              },
-              "msg": "+4 (incl 3 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 572,
-                "endLine": 572,
-                "startOffset": 4,
-                "endOffset": 7
-              },
-              "msg": "+4 (incl 3 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 575,
-                "endLine": 575,
-                "startOffset": 5,
-                "endOffset": 7
-              },
-              "msg": "+5 (incl 4 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 580,
-                "endLine": 580,
-                "startOffset": 5,
-                "endOffset": 7
-              },
-              "msg": "+5 (incl 4 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 585,
-                "endLine": 585,
-                "startOffset": 5,
-                "endOffset": 7
-              },
-              "msg": "+5 (incl 4 for nesting)"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 599,
-                "endLine": 599,
+                "startLine": 607,
+                "endLine": 607,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4390,8 +4126,36 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 616,
-                "endLine": 616,
+                "startLine": 612,
+                "endLine": 612,
+                "startOffset": 2,
+                "endOffset": 4
+              },
+              "msg": "+2 (incl 1 for nesting)"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 619,
+                "endLine": 619,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 623,
+                "endLine": 623,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -4401,15 +4165,15 @@
         }
       ],
       "status": "OPEN",
-      "message": "Refactor this method to reduce its Cognitive Complexity from 73 to the 15 allowed.",
-      "effort": "1h3min",
-      "debt": "1h3min",
+      "message": "Refactor this method to reduce its Cognitive Complexity from 22 to the 15 allowed.",
+      "effort": "12min",
+      "debt": "12min",
       "author": "madmifta77@gmail.com",
       "tags": [
         "brain-overload"
       ],
       "creationDate": "2026-03-14T03:39:41+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -7852,7 +7616,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 160,
       "hash": "67e3216f05d991b37c5f96b8c410429a",
       "textRange": {
         "startLine": 160,
@@ -7904,7 +7667,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"wallet not found [id=%s]: %w\" 4 times.",
       "effort": "8min",
       "debt": "8min",
@@ -7913,7 +7677,8 @@
         "design"
       ],
       "creationDate": "2026-03-05T08:49:11+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -7924,7 +7689,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -7934,7 +7699,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 175,
       "hash": "2f451716bb96ce9ed9302045a6bb9c5e",
       "textRange": {
         "startLine": 175,
@@ -8000,7 +7764,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"invalid transaction type [type=%s]\" 5 times.",
       "effort": "10min",
       "debt": "10min",
@@ -8009,7 +7774,8 @@
         "design"
       ],
       "creationDate": "2026-03-05T08:49:11+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -8020,7 +7786,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -8392,12 +8158,12 @@
       "component": "aurify-backend_Aurify-Transaction:interface/grpc/interceptor/user_metadata.go",
       "project": "aurify-backend_Aurify-Transaction",
       "line": 124,
-      "hash": "50eb059e6c26d63878846e6f7394a94c",
+      "hash": "3f27d404f915cbbc097297f741f5ded7",
       "textRange": {
         "startLine": 124,
         "endLine": 124,
         "startOffset": 1,
-        "endOffset": 4
+        "endOffset": 10
       },
       "flows": [],
       "status": "OPEN",
@@ -8430,7 +8196,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:interface/grpc/server/transaction.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 316,
       "hash": "d849e36663052987f4cdb6afbd31f270",
       "textRange": {
         "startLine": 316,
@@ -8552,7 +8317,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.",
       "effort": "6min",
       "debt": "6min",
@@ -8561,7 +8327,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-03-04T07:40:03+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -8572,7 +8339,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -8582,7 +8349,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:cmd/api/main.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 49,
       "hash": "4a68759f9aa6ce1908cfe6b41f047377",
       "textRange": {
         "startLine": 49,
@@ -8816,7 +8582,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 22 to the 15 allowed.",
       "effort": "12min",
       "debt": "12min",
@@ -8825,7 +8592,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-02-27T10:06:37+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -8836,7 +8604,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -8846,7 +8614,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:interface/http/handler/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 96,
       "hash": "8e59184da13e7f9a50928c5b691738dc",
       "textRange": {
         "startLine": 96,
@@ -8912,7 +8679,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"invalid request body\" 5 times.",
       "effort": "10min",
       "debt": "10min",
@@ -8921,7 +8689,8 @@
         "design"
       ],
       "creationDate": "2026-02-27T10:06:37+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -8932,7 +8701,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -8942,7 +8711,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 72,
       "hash": "46b6732dd907a309b1c64310ee249448",
       "textRange": {
         "startLine": 72,
@@ -8980,7 +8748,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"transaction not found [id=%s]: %w\" 3 times.",
       "effort": "6min",
       "debt": "6min",
@@ -8989,7 +8758,8 @@
         "design"
       ],
       "creationDate": "2026-02-27T10:06:37+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -9000,7 +8770,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -9316,7 +9086,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/env/config.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 59,
       "hash": "3c5d75ec9303d95cd7b2ae7ab06446d5",
       "textRange": {
         "startLine": 59,
@@ -9704,7 +9473,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 30 to the 15 allowed.",
       "effort": "20min",
       "debt": "20min",
@@ -9713,7 +9483,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-02-17T03:39:20+0000",
-      "updateDate": "2026-03-23T05:51:56+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -9724,7 +9495,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -9734,7 +9505,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/env/config.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 159,
       "hash": "8adfec29273cc81ad6ce1c8da30022f7",
       "textRange": {
         "startLine": 159,
@@ -10094,7 +9864,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 25 to the 15 allowed.",
       "effort": "15min",
       "debt": "15min",
@@ -10103,7 +9874,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-02-17T03:39:20+0000",
-      "updateDate": "2026-03-23T05:51:56+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -10114,7 +9886,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10124,7 +9896,6 @@
       "severity": "MINOR",
       "component": "aurify-backend_Aurify-Transaction:interface/http/routes/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 22,
       "hash": "0990ff62c8c5273cd5769d3d5dd7a0c3",
       "textRange": {
         "startLine": 22,
@@ -10133,7 +9904,8 @@
         "endOffset": 17
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Rename this local variable to match the regular expression \"^(_|[a-zA-Z0-9]+)$\".",
       "effort": "2min",
       "debt": "2min",
@@ -10142,7 +9914,8 @@
         "convention"
       ],
       "creationDate": "2026-02-17T03:39:20+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "IDENTIFIABLE",
@@ -10153,7 +9926,7 @@
           "severity": "LOW"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10163,11 +9936,11 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 239,
+      "line": 280,
       "hash": "ccf906b3344c2b61de8755c1d9317f5b",
       "textRange": {
-        "startLine": 239,
-        "endLine": 239,
+        "startLine": 280,
+        "endLine": 280,
         "startOffset": 45,
         "endOffset": 57
       },
@@ -10177,106 +9950,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 241,
-                "endLine": 241,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 249,
-                "endLine": 249,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 254,
-                "endLine": 254,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 259,
-                "endLine": 259,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 264,
-                "endLine": 264,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 273,
-                "endLine": 273,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 278,
-                "endLine": 278,
-                "startOffset": 1,
-                "endOffset": 3
-              },
-              "msg": "+1"
-            }
-          ]
-        },
-        {
-          "locations": [
-            {
-              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
-              "textRange": {
-                "startLine": 284,
-                "endLine": 284,
+                "startLine": 282,
+                "endLine": 282,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10317,8 +9992,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 297,
-                "endLine": 297,
+                "startLine": 298,
+                "endLine": 298,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10331,8 +10006,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 308,
-                "endLine": 308,
+                "startLine": 302,
+                "endLine": 302,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10345,8 +10020,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 319,
-                "endLine": 319,
+                "startLine": 310,
+                "endLine": 310,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10359,8 +10034,36 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 324,
-                "endLine": 324,
+                "startLine": 315,
+                "endLine": 315,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 320,
+                "endLine": 320,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 325,
+                "endLine": 325,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10387,8 +10090,8 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 333,
-                "endLine": 333,
+                "startLine": 332,
+                "endLine": 332,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10415,8 +10118,50 @@
             {
               "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
               "textRange": {
-                "startLine": 353,
-                "endLine": 353,
+                "startLine": 354,
+                "endLine": 354,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 361,
+                "endLine": 361,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 365,
+                "endLine": 365,
+                "startOffset": 1,
+                "endOffset": 3
+              },
+              "msg": "+1"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
+              "textRange": {
+                "startLine": 369,
+                "endLine": 369,
                 "startOffset": 1,
                 "endOffset": 3
               },
@@ -10426,15 +10171,15 @@
         }
       ],
       "status": "OPEN",
-      "message": "Refactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.",
-      "effort": "8min",
-      "debt": "8min",
+      "message": "Refactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.",
+      "effort": "6min",
+      "debt": "6min",
       "author": "madmifta77@gmail.com",
       "tags": [
         "brain-overload"
       ],
       "creationDate": "2026-02-17T03:39:20+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -10455,7 +10200,6 @@
       "severity": "MAJOR",
       "component": "aurify-backend_Aurify-Transaction:Dockerfile",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 12,
       "hash": "72cc33f7273acdc5b24e7ebaa1860886",
       "textRange": {
         "startLine": 12,
@@ -10464,14 +10208,16 @@
         "endOffset": 18
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Use a specific version tag for the image.",
       "effort": "5min",
       "debt": "5min",
       "author": "madmifta77@gmail.com",
       "tags": [],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "LOGICAL",
@@ -10482,7 +10228,7 @@
           "severity": "MEDIUM"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10492,7 +10238,6 @@
       "severity": "MAJOR",
       "component": "aurify-backend_Aurify-Transaction:Dockerfile.migrate",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 12,
       "hash": "72cc33f7273acdc5b24e7ebaa1860886",
       "textRange": {
         "startLine": 12,
@@ -10501,14 +10246,16 @@
         "endOffset": 18
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Use a specific version tag for the image.",
       "effort": "5min",
       "debt": "5min",
       "author": "madmifta77@gmail.com",
       "tags": [],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "LOGICAL",
@@ -10519,7 +10266,7 @@
           "severity": "MEDIUM"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10529,7 +10276,6 @@
       "severity": "MINOR",
       "component": "aurify-backend_Aurify-Transaction:interface/http/routes/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 23,
       "hash": "151b7943ac6c3e74fb9e1bd2fdef7fee",
       "textRange": {
         "startLine": 23,
@@ -10538,7 +10284,8 @@
         "endOffset": 20
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Rename this local variable to match the regular expression \"^(_|[a-zA-Z0-9]+)$\".",
       "effort": "2min",
       "debt": "2min",
@@ -10547,7 +10294,8 @@
         "convention"
       ],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "IDENTIFIABLE",
@@ -10558,7 +10306,7 @@
           "severity": "LOW"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10568,7 +10316,6 @@
       "severity": "MAJOR",
       "component": "aurify-backend_Aurify-Transaction:migrate.sh",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 15,
       "hash": "82210b05b6add812972347f14fb3cddb",
       "textRange": {
         "startLine": 15,
@@ -10577,7 +10324,8 @@
         "endOffset": 62
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Redirect this error message to stderr (>&2).",
       "effort": "5min",
       "debt": "5min",
@@ -10588,7 +10336,8 @@
         "shell"
       ],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "CONVENTIONAL",
@@ -10599,7 +10348,7 @@
           "severity": "MEDIUM"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10609,7 +10358,6 @@
       "severity": "MINOR",
       "component": "aurify-backend_Aurify-Transaction:migrate.sh",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 58,
       "hash": "9b0aa897ba4c6b870605c68fec7f3918",
       "textRange": {
         "startLine": 58,
@@ -10618,7 +10366,8 @@
         "endOffset": 51
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of using the literal '-----------------------------------------' 5 times.",
       "effort": "4min",
       "debt": "4min",
@@ -10627,7 +10376,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -10638,7 +10388,7 @@
           "severity": "LOW"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -10648,7 +10398,6 @@
       "severity": "MINOR",
       "component": "aurify-backend_Aurify-Transaction:migrate.sh",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 60,
       "hash": "3579b6dc3682722514f6d82c7fe55ee4",
       "textRange": {
         "startLine": 60,
@@ -10657,7 +10406,8 @@
         "endOffset": 51
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of using the literal '=========================================' 4 times.",
       "effort": "4min",
       "debt": "4min",
@@ -10666,7 +10416,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T14:43:28+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -10677,7 +10428,7 @@
           "severity": "LOW"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -14623,7 +14374,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/log/logrus.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 22,
       "hash": "e0810db1a60306c6c22caabb1d0233df",
       "textRange": {
         "startLine": 22,
@@ -14815,7 +14565,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 22 to the 15 allowed.",
       "effort": "12min",
       "debt": "12min",
@@ -14824,7 +14575,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -14835,7 +14587,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -14845,7 +14597,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/miniofs/minio.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 200,
       "hash": "8dc858dd77aefbb1e9652930d528f6a0",
       "textRange": {
         "startLine": 200,
@@ -15023,7 +14774,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.",
       "effort": "8min",
       "debt": "8min",
@@ -15032,7 +14784,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -15043,7 +14796,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15053,7 +14806,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/miniofs/minio.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 235,
       "hash": "db884674e936a6da65cc2c96053e40a3",
       "textRange": {
         "startLine": 235,
@@ -15091,7 +14843,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"application/octet-stream\" 3 times.",
       "effort": "6min",
       "debt": "6min",
@@ -15100,7 +14853,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -15111,7 +14865,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15121,7 +14875,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/miniofs/minio.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 250,
       "hash": "3f75a9cc5eebf4eeefd56db053a2b527",
       "textRange": {
         "startLine": 250,
@@ -15187,7 +14940,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"MinIO client not ready\" 5 times.",
       "effort": "10min",
       "debt": "10min",
@@ -15196,7 +14950,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -15207,7 +14962,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15217,7 +14972,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/miniofs/minio.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 393,
       "hash": "feae6c7ca4cc3a07cace9e2b47d04d7e",
       "textRange": {
         "startLine": 393,
@@ -15255,7 +15009,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"image/gif\" 3 times.",
       "effort": "6min",
       "debt": "6min",
@@ -15264,7 +15019,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -15275,7 +15031,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15285,7 +15041,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:config/miniofs/minio.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 398,
       "hash": "f058cdfdce7d5c489b219fd9cc141b12",
       "textRange": {
         "startLine": 398,
@@ -15337,7 +15092,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Define a constant instead of duplicating this literal \"application/zip\" 4 times.",
       "effort": "8min",
       "debt": "8min",
@@ -15346,7 +15102,8 @@
         "design"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "DISTINCT",
@@ -15357,7 +15114,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15367,7 +15124,6 @@
       "severity": "CRITICAL",
       "component": "aurify-backend_Aurify-Transaction:internal/service/categories.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 36,
       "hash": "8c6a1eb11025f924054eadb38fbbdf80",
       "textRange": {
         "startLine": 36,
@@ -15517,7 +15273,8 @@
           ]
         }
       ],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Refactor this method to reduce its Cognitive Complexity from 27 to the 15 allowed.",
       "effort": "17min",
       "debt": "17min",
@@ -15526,7 +15283,8 @@
         "brain-overload"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "FOCUSED",
@@ -15537,7 +15295,7 @@
           "severity": "HIGH"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     },
@@ -15547,7 +15305,6 @@
       "severity": "MAJOR",
       "component": "aurify-backend_Aurify-Transaction:internal/service/transactions.go",
       "project": "aurify-backend_Aurify-Transaction",
-      "line": 385,
       "hash": "a4cffd8b01a29f45b89bef63a6feda21",
       "textRange": {
         "startLine": 385,
@@ -15556,7 +15313,8 @@
         "endOffset": 29
       },
       "flows": [],
-      "status": "OPEN",
+      "resolution": "FIXED",
+      "status": "CLOSED",
       "message": "Use the available context parameter 'ctx' instead of creating a new background context.",
       "effort": "5min",
       "debt": "5min",
@@ -15567,7 +15325,8 @@
         "performance"
       ],
       "creationDate": "2026-01-20T10:35:33+0000",
-      "updateDate": "2026-03-14T03:42:25+0000",
+      "updateDate": "2026-03-23T13:14:34+0000",
+      "closeDate": "2026-03-23T13:14:34+0000",
       "type": "CODE_SMELL",
       "organization": "aurify-backend",
       "cleanCodeAttribute": "LOGICAL",
@@ -15582,7 +15341,7 @@
           "severity": "MEDIUM"
         }
       ],
-      "issueStatus": "OPEN",
+      "issueStatus": "FIXED",
       "projectName": "Aurify-Transaction",
       "internalTags": []
     }
