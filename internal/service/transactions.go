@@ -10,7 +10,6 @@ import (
 	"refina-transaction/internal/repository"
 	"refina-transaction/internal/types/dto"
 	"refina-transaction/internal/types/model"
-	"refina-transaction/internal/utils"
 	helper "refina-transaction/internal/utils"
 	"refina-transaction/internal/utils/data"
 
@@ -672,7 +671,7 @@ func (transaction_serv *transactionsService) UpdateTransaction(ctx context.Conte
 		return dto.TransactionsResponse{}, err
 	}
 
-	if !transaction.Date.IsZero() && !utils.SameDate(transaction.Date, transactionExist.TransactionDate) {
+	if !transaction.Date.IsZero() && !helper.SameDate(transaction.Date, transactionExist.TransactionDate) {
 		transactionExist.TransactionDate = transaction.Date
 	}
 
